@@ -2135,7 +2135,7 @@ export class SkillMatcher {
   static matchSkills(
     applicantText: string,
     positionSkills: string[],
-    threshold = 0.65, // Lowered threshold for better matching
+    threshold = 0.85, // Increased threshold from 0.65 to 0.85 to reduce false positives
   ): {
     matches: string[]
     score: number
@@ -2153,17 +2153,11 @@ export class SkillMatcher {
       if (text.includes(skillLower)) {
         confidence = 1.0
       }
-      // Partial word match
+      // Partial word match - must be very close
       else if (this.hasPartialMatch(text, skillLower)) {
         confidence = 0.9
       }
-      // Fuzzy similarity match
-      else {
-        const similarity = this.calculateBestSimilarity(text, skillLower)
-        if (similarity >= threshold) {
-          confidence = similarity
-        }
-      }
+      // Only exact and strong partial matches are now considered
 
       // Contextual bonus for skill combinations
       if (confidence > 0) {
@@ -2189,11 +2183,11 @@ export class SkillMatcher {
         (textWord) =>
           textWord.includes(skillWord) ||
           skillWord.includes(textWord) ||
-          this.calculateSimilarity(textWord, skillWord) > 0.8,
+          this.calculateSimilarity(textWord, skillWord) > 0.9,
       ),
     )
 
-    return matchedWords.length >= Math.ceil(skillWords.length * 0.7)
+    return matchedWords.length >= Math.ceil(skillWords.length * 0.8)
   }
 
   private static calculateBestSimilarity(text: string, skill: string): number {

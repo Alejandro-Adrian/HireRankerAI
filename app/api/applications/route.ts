@@ -43,27 +43,17 @@ export async function POST(request: NextRequest) {
     console.log("Processing application submission")
 
     const ranking_id = formData.get("ranking_id") as string
-    const hr_name = formData.get("hr_name") as string
-    const company_name = formData.get("company_name") as string
+    const hr_name = (formData.get("hr_name") as string) || null
+    const company_name = (formData.get("company_name") as string) || null
 
     if (!ranking_id) {
       console.error("Missing ranking ID")
       return NextResponse.json({ error: "Missing ranking ID" }, { status: 400 })
     }
 
-    if (!hr_name?.trim()) {
-      console.error("Missing HR contact name")
-      return NextResponse.json({ error: "HR contact name is required" }, { status: 400 })
-    }
-
-    if (!company_name?.trim()) {
-      console.error("Missing company name")
-      return NextResponse.json({ error: "Company name is required" }, { status: 400 })
-    }
-
     console.log("Ranking ID:", ranking_id)
-    console.log("HR Name:", hr_name)
-    console.log("Company Name:", company_name)
+    if (hr_name) console.log("HR Name:", hr_name)
+    if (company_name) console.log("Company Name:", company_name)
 
     // Process uploaded files
     const fileEntries = Array.from(formData.entries()).filter(
@@ -211,8 +201,8 @@ export async function POST(request: NextRequest) {
       applicant_email: resumeData.applicant_email || `applicant-${Date.now()}@placeholder.com`,
       applicant_phone: resumeData.applicant_phone || null,
       applicant_city: resumeData.applicant_city || null,
-      hr_name: hr_name.trim(),
-      company_name: company_name.trim(),
+      hr_name: hr_name?.trim() || null,
+      company_name: company_name?.trim() || null,
       status: "pending",
       submitted_at: new Date().toISOString(),
       resume_summary: resumeData.resume_summary,
@@ -225,7 +215,7 @@ export async function POST(request: NextRequest) {
 
     console.log("Application data to insert:", JSON.stringify(applicationData, null, 2))
 
-    const requiredFields = ["ranking_id", "applicant_name", "status", "submitted_at", "hr_name", "company_name"]
+    const requiredFields = ["ranking_id", "applicant_name", "status", "submitted_at"]
     const missingFields = requiredFields.filter((field) => !applicationData[field])
 
     if (missingFields.length > 0) {
@@ -360,7 +350,7 @@ export async function POST(request: NextRequest) {
               user_id: ranking.created_by,
               type: "application_submitted",
               title: "New Application Received",
-              message: `${resumeData.applicant_name} has submitted an application for ${ranking.title} at ${company_name}`,
+              message: `${resumeData.applicant_name} has submitted an application for ${ranking.title}${company_name ? ` at ${company_name}` : ""}`,
               data: {
                 application_id: application.id,
                 ranking_id: ranking_id,
@@ -394,10 +384,13 @@ export async function POST(request: NextRequest) {
           phone: resumeData.applicant_phone || "Phone not detected",
           city: resumeData.applicant_city || "Location not detected",
         },
-        company_info: {
-          hr_name: hr_name,
-          company_name: company_name,
-        },
+        ...(company_name &&
+          hr_name && {
+            company_info: {
+              hr_name: hr_name,
+              company_name: company_name,
+            },
+          }),
         uploaded_files: uploadedFiles.length,
       },
       { status: 201 },

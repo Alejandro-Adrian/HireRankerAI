@@ -16,7 +16,7 @@ HireRankerAI is a comprehensive hiring management system that uses AI to rank an
 ### Prerequisites
 - Node.js 18+
 - PostgreSQL database (Supabase recommended)
-- SMTP email service (Gmail recommended)
+- Resend API key for email service
 
 ### Installation
 1. Clone the repository:
@@ -37,10 +37,10 @@ HireRankerAI is a comprehensive hiring management system that uses AI to rank an
 
 4. Configure your environment variables in `.env`:
    - Get your Supabase URL and keys from your Supabase project dashboard
-   - Add your email credentials for SMTP (Gmail app password recommended)
+   - Add your Resend API key for email service
 
 5. Set up the database:
-   - Run `scripts/setup_database.sql` in your Supabase SQL editor
+   - Run the SQL scripts in the `scripts` folder in your Supabase SQL editor
    - This creates all necessary tables and functions
 
 6. Start the development server:
@@ -56,8 +56,10 @@ HireRankerAI is a comprehensive hiring management system that uses AI to rank an
 - `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key
 
 ### Email Configuration
-- `EMAIL_USER` - Your Gmail address
-- `EMAIL_PASS` - Your Gmail app password
+- `RESEND_API_KEY` - Your Resend API key
+
+### Storage Configuration
+- `BLOB_READ_WRITE_TOKEN` - Your blob storage token
 
 ### Application Settings
 - `NEXT_PUBLIC_SITE_URL` - Your site URL (http://localhost:3000 for local)
@@ -65,35 +67,21 @@ HireRankerAI is a comprehensive hiring management system that uses AI to rank an
 ## Database Scripts
 
 ### Setup Database
-Run `scripts/setup_database.sql` to create all necessary tables, indexes, and functions.
-
-### Reset Database
-Run `scripts/reset_database.sql` to clear all data while preserving table structure (useful for fresh deployments).
+Run the SQL scripts in the `scripts` folder to create all necessary tables, indexes, and functions.
 
 ## Deployment
 
-### Railway Deployment
-1. Connect your GitHub repository to Railway
-2. Set environment variables in Railway dashboard using the values from your `.env` file
-3. Railway will automatically detect and deploy your Next.js application
-4. Make sure to set `NODE_ENV=production` in Railway environment variables
-
-### Render Deployment
-1. Connect your GitHub repository to Render
-2. Create a new Web Service
-3. Set environment variables in Render dashboard using the values from your `.env` file
-4. Use the following build and start commands:
-   - Build Command: `npm run build`
-   - Start Command: `npm start`
-5. Make sure to set `NODE_ENV=production` in Render environment variables
+### General Deployment Steps
+1. Connect your GitHub repository to your hosting platform
+2. Set all environment variables from your `.env` file
+3. The platform will automatically detect and deploy your Next.js application
+4. Make sure to set `NODE_ENV=production` in environment variables
 
 ### Environment Variables for Production
-For Railway and Render, make sure to set these environment variables in your deployment platform:
+Make sure to set these environment variables in your deployment platform:
 - All variables from your `.env` file
 - `NODE_ENV=production`
-- `PORT=3000` (or let the platform set it automatically)
-
-See `DEPLOYMENT.md` for comprehensive deployment instructions for various hosting platforms.
+- `NEXT_PHASE=phase-production-build` (for build-time optimization)
 
 ## Troubleshooting
 
@@ -102,17 +90,17 @@ See `DEPLOYMENT.md` for comprehensive deployment instructions for various hostin
 #### Database Connection Errors
 - Verify Supabase credentials in environment variables
 - Check that your Supabase project is active
-- Ensure database tables are created using the setup script
+- Ensure database tables are created using the setup scripts
 
 #### Email Not Sending
-- Verify Gmail app password is correct
-- Check SMTP settings
-- Ensure 2FA is enabled on Gmail account
+- Verify Resend API key is correct
+- Check that your domain is verified in Resend dashboard
+- Review email sending logs for errors
 
 #### File Upload Issues
-- Check Supabase Storage bucket configuration
+- Check blob storage configuration
 - Verify file size limits (10MB max)
-- Ensure proper permissions on storage bucket
+- Ensure proper permissions on storage
 
 #### Application Scoring Issues
 - Verify all required criteria are configured
@@ -124,7 +112,6 @@ See `DEPLOYMENT.md` for comprehensive deployment instructions for various hostin
 ### Backend
 - **Next.js 14** with App Router
 - **Supabase** for database and authentication
-- **Node.js** server with WebSocket support
 - **TypeScript** for type safety
 
 ### Frontend
@@ -138,7 +125,7 @@ See `DEPLOYMENT.md` for comprehensive deployment instructions for various hostin
 - **react-hook-form** - Form management
 - **zod** - Schema validation
 - **recharts** - Data visualization
-- **nodemailer** - Email sending
+- **resend** - Email service
 
 ## Contributing
 1. Fork the repository

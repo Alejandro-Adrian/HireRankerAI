@@ -134,18 +134,13 @@ export default function VideoCallManager({ rankings, onBack, onNotification, use
       })
 
       if (response.ok) {
-        const data = await response.json()
-
-        setSessions((prev) => [data, ...prev])
-
-        onNotification("Video session created successfully! Joining now...", "success")
+        onNotification("Video session created successfully! Redirecting...", "success")
 
         setShowCreateModal(false)
         setSessionTitle("")
         setScheduledDate("")
         setScheduledTime("")
 
-        // Navigate to the video call page
         window.location.href = meetingUrl
       } else {
         onNotification("Failed to create session", "error")
@@ -196,9 +191,9 @@ export default function VideoCallManager({ rankings, onBack, onNotification, use
       })
 
       if (response.ok) {
-        setSessions((prev) => prev.filter((session) => session.id !== sessionId))
+        onNotification("Session deleted successfully! Refreshing...", "success")
 
-        onNotification("Session deleted successfully!", "success")
+        window.location.reload()
       } else {
         onNotification("Failed to delete session", "error")
       }

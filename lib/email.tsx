@@ -437,9 +437,9 @@ export function createAccountDeletionEmailHTML(userName: string): string {
 
 export function createVideoCallInvitationEmailHTML(
   candidateName: string,
+  position: string,
   meetingLink: string,
-  meetingTime: string,
-  position?: string,
+  meetingTime?: string,
 ): string {
   return `
     <!DOCTYPE html>
@@ -539,7 +539,7 @@ export function createVideoCallInvitationEmailHTML(
         
         <div class="meeting-details">
           <h3 style="color: #8b5cf6; margin-bottom: 15px;">📅 Meeting Details</h3>
-          <p><strong>Date & Time:</strong> ${meetingTime}</p>
+          ${meetingTime ? `<p><strong>Date & Time:</strong> ${meetingTime}</p>` : "<p><strong>Schedule:</strong> As soon as possible</p>"}
           <p><strong>Duration:</strong> 30-45 minutes</p>
           <p><strong>Format:</strong> Video Call</p>
         </div>

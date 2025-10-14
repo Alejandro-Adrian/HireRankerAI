@@ -2,7 +2,8 @@
 import { useState } from "react"
 import type React from "react"
 
-import { Upload, FileText, Award, Briefcase, Send, CheckCircle, AlertCircle, User, Building } from "lucide-react"
+import { Upload, FileText, Award, Briefcase, Send, CheckCircle, AlertCircle } from "lucide-react"
+import ManualApplicationForm from "./ManualApplicationForm" // Import ManualApplicationForm component
 
 interface ApplicationFormProps {
   ranking: any
@@ -20,8 +21,7 @@ export default function ApplicationForm({ ranking }: ApplicationFormProps) {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState("")
   const [extractedInfo, setExtractedInfo] = useState<any>(null)
-  const [hrName, setHrName] = useState("")
-  const [companyName, setCompanyName] = useState("")
+  const [showManualEntry, setShowManualEntry] = useState(false)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, category: FileUpload["category"]) => {
     const selectedFiles = Array.from(e.target.files || [])
@@ -82,23 +82,11 @@ export default function ApplicationForm({ ranking }: ApplicationFormProps) {
       return
     }
 
-    if (!hrName.trim()) {
-      setError("Please enter the HR contact name")
-      return
-    }
-
-    if (!companyName.trim()) {
-      setError("Please enter the company name")
-      return
-    }
-
     setSubmitting(true)
 
     try {
       const submitData = new FormData()
       submitData.append("ranking_id", ranking.id)
-      submitData.append("hr_name", hrName.trim())
-      submitData.append("company_name", companyName.trim())
 
       files.forEach((fileUpload, index) => {
         submitData.append(`file_${index}`, fileUpload.file)
@@ -138,7 +126,7 @@ export default function ApplicationForm({ ranking }: ApplicationFormProps) {
         </div>
         <h2 className="text-2xl font-bold text-foreground mb-2">Application Submitted!</h2>
         <p className="text-muted-foreground mb-4">
-          Thank you for your interest in the {ranking.position.replace("/", " / ")} position at {companyName}.
+          Thank you for your interest in the {ranking.position.replace("/", " / ")} position.
         </p>
         {extractedInfo && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4 animate-slide-in-up">
@@ -165,9 +153,23 @@ export default function ApplicationForm({ ranking }: ApplicationFormProps) {
         )}
         <p className="text-sm text-muted-foreground">
           We have received your application and automatically extracted your personal information from your resume. Your
-          application is being processed and scored automatically. The HR team at {companyName} will contact you if you
-          are selected for the next stage.
+          application is being processed and scored automatically. The HR team will contact you if you are selected for
+          the next stage.
         </p>
+      </div>
+    )
+  }
+
+  if (showManualEntry) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => setShowManualEntry(false)}
+          className="text-sm text-primary hover:text-primary/80 flex items-center space-x-1"
+        >
+          <span>← Back to file upload</span>
+        </button>
+        <ManualApplicationForm ranking={ranking} />
       </div>
     )
   }
@@ -196,53 +198,18 @@ export default function ApplicationForm({ ranking }: ApplicationFormProps) {
         </div>
       )}
 
-      <div className="bg-card rounded-lg shadow-sm border border-border p-6 hover-lift animate-slide-in-left">
-        <div className="flex items-center space-x-2 mb-4">
-          <Building className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Company Information</h2>
+      <div className="bg-muted/30 border border-border rounded-lg p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">Don't have a resume file?</p>
+          <p className="text-xs text-muted-foreground">You can manually enter applicant information instead</p>
         </div>
-
-        <p className="text-sm text-muted-foreground mb-6">
-          Please provide the HR contact and company details for this application.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="hrName" className="block text-sm font-medium text-foreground">
-              HR Contact Name *
-            </label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                id="hrName"
-                value={hrName}
-                onChange={(e) => setHrName(e.target.value)}
-                placeholder="e.g., Sarah Johnson"
-                className="w-full pl-10 pr-4 py-3 bg-background border-2 border-border rounded-xl text-foreground placeholder-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all duration-300 hover:border-primary/50"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="companyName" className="block text-sm font-medium text-foreground">
-              Company Name *
-            </label>
-            <div className="relative">
-              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                id="companyName"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="e.g., Acme Corporation"
-                className="w-full pl-10 pr-4 py-3 bg-background border-2 border-border rounded-xl text-foreground placeholder-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all duration-300 hover:border-primary/50"
-                required
-              />
-            </div>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowManualEntry(true)}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+        >
+          Manual Entry
+        </button>
       </div>
 
       <div className="bg-card rounded-lg shadow-sm border border-border p-6 hover-lift animate-slide-in-left">
@@ -414,7 +381,7 @@ export default function ApplicationForm({ ranking }: ApplicationFormProps) {
       <div className="flex justify-center animate-slide-in-up">
         <button
           type="submit"
-          disabled={submitting || !hasResume || !hrName.trim() || !companyName.trim()}
+          disabled={submitting || !hasResume}
           className="flex items-center space-x-2 px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 text-lg font-medium transform hover:scale-105 hover:shadow-lg active:scale-95 disabled:hover:scale-100"
         >
           {submitting ? (
