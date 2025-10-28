@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,6 +20,9 @@ import {
   Lock,
   Trash2,
   Building,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -52,6 +56,12 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
   const [passwordChangeStep, setPasswordChangeStep] = useState<"form" | "verification">("form")
   const [deleteStep, setDeleteStep] = useState<"form" | "verification">("form")
   const [verificationCode, setVerificationCode] = useState("")
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load user profile
   useEffect(() => {
@@ -297,67 +307,65 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 p-4 animate-fade-in">
+    <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8 animate-slide-in-down">
+        <div className="flex items-center gap-4 mb-8">
           <Button
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="text-white hover:bg-white/10 hover:text-emerald-300 transition-all duration-300 hover:scale-105"
+            className="text-foreground hover:bg-muted transition-all duration-300 hover:scale-105"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Dashboard
           </Button>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-              Settings
-            </h1>
-            <p className="text-slate-400">Manage your account and preferences</p>
+            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+            <p className="text-muted-foreground">Manage your account and preferences</p>
           </div>
         </div>
 
         {/* Notifications */}
         {message && (
-          <Alert className="mb-6 border-emerald-500/20 bg-emerald-500/10 text-emerald-300 animate-slide-in-up">
+          <Alert className="mb-6 border-primary/20 bg-primary/10 text-primary">
             <AlertDescription>{message}</AlertDescription>
           </Alert>
         )}
 
         {error && (
-          <Alert className="mb-6 border-red-500/20 bg-red-500/10 text-red-300 animate-slide-in-up">
+          <Alert className="mb-6 border-destructive/20 bg-destructive/10 text-destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {/* Settings Tabs */}
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 animate-slide-in-up">
+          <TabsList className="grid w-full grid-cols-4 bg-muted border border-border">
             <TabsTrigger
               value="profile"
-              className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all duration-300"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
             >
               <User className="w-4 h-4 mr-2" />
               Profile
             </TabsTrigger>
             <TabsTrigger
               value="security"
-              className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all duration-300"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
             >
               <Shield className="w-4 h-4 mr-2" />
               Security
             </TabsTrigger>
             <TabsTrigger
               value="appearance"
-              className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all duration-300"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300"
             >
               <Palette className="w-4 h-4 mr-2" />
               Appearance
             </TabsTrigger>
             <TabsTrigger
               value="danger"
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white transition-all duration-300"
+              className="data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground transition-all duration-300"
             >
               <AlertTriangle className="w-4 h-4 mr-2" />
               Danger Zone
@@ -365,33 +373,33 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
           </TabsList>
 
           {/* Profile Tab */}
-          <TabsContent value="profile" className="animate-fade-in">
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 hover:bg-slate-800/60 transition-all duration-300">
+          <TabsContent value="profile">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-emerald-300 flex items-center gap-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
                   <User className="w-5 h-5" />
                   Profile Information
                 </CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardDescription className="text-muted-foreground">
                   Update your personal information and preferences
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-slate-300">
+                    <Label htmlFor="name" className="text-foreground">
                       Full Name
                     </Label>
                     <Input
                       id="name"
                       value={profile.name}
                       onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                      className="bg-slate-700/50 border-slate-600 text-white focus:border-emerald-500 transition-all duration-300"
+                      className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300"
                       placeholder="Enter your full name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company_name" className="text-slate-300 flex items-center gap-2">
+                    <Label htmlFor="company_name" className="text-foreground flex items-center gap-2">
                       <Building className="w-4 h-4" />
                       Company Name
                     </Label>
@@ -399,39 +407,39 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                       id="company_name"
                       value={profile.company_name}
                       onChange={(e) => setProfile({ ...profile, company_name: e.target.value })}
-                      className="bg-slate-700/50 border-slate-600 text-white focus:border-emerald-500 transition-all duration-300"
+                      className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300"
                       placeholder="Enter your company name"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-300">
+                  <Label htmlFor="email" className="text-foreground">
                     Email Address
                   </Label>
                   <Input
                     id="email"
                     value={profile.email}
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    className="bg-slate-700/50 border-slate-600 text-white focus:border-emerald-500 transition-all duration-300"
+                    className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300"
                     placeholder="Enter your email"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bio" className="text-slate-300">
+                  <Label htmlFor="bio" className="text-foreground">
                     Bio
                   </Label>
                   <textarea
                     id="bio"
                     value={profile.bio}
                     onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                    className="w-full min-h-[100px] px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-md text-white focus:border-emerald-500 focus:outline-none transition-all duration-300 resize-none"
+                    className="w-full min-h-[100px] px-3 py-2 bg-muted border border-border rounded-md text-foreground focus:border-primary focus:outline-none transition-all duration-300 resize-none"
                     placeholder="Tell us about yourself..."
                   />
                 </div>
                 <Button
                   onClick={updateProfile}
                   disabled={loading}
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 hover:scale-105"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:scale-105"
                 >
                   {loading ? "Updating..." : "Update Profile"}
                 </Button>
@@ -440,14 +448,14 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
           </TabsContent>
 
           {/* Security Tab */}
-          <TabsContent value="security" className="animate-fade-in">
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 hover:bg-slate-800/60 transition-all duration-300">
+          <TabsContent value="security">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-emerald-300 flex items-center gap-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
                   <Lock className="w-5 h-5" />
                   Change Password
                 </CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardDescription className="text-muted-foreground">
                   Update your password to keep your account secure
                 </CardDescription>
               </CardHeader>
@@ -455,7 +463,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                 {passwordChangeStep === "form" ? (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="current-password" className="text-slate-300">
+                      <Label htmlFor="current-password" className="text-foreground">
                         Current Password
                       </Label>
                       <div className="relative">
@@ -464,14 +472,14 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                           type={showCurrentPassword ? "text" : "password"}
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="bg-slate-700/50 border-slate-600 text-white focus:border-emerald-500 transition-all duration-300 pr-10"
+                          className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
                           placeholder="Enter current password"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
+                          className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
                           onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                         >
                           {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -480,7 +488,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="new-password" className="text-slate-300">
+                        <Label htmlFor="new-password" className="text-foreground">
                           New Password
                         </Label>
                         <div className="relative">
@@ -489,14 +497,14 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                             type={showNewPassword ? "text" : "password"}
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            className="bg-slate-700/50 border-slate-600 text-white focus:border-emerald-500 transition-all duration-300 pr-10"
+                            className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
                             placeholder="Enter new password"
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
+                            className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
                             onClick={() => setShowNewPassword(!showNewPassword)}
                           >
                             {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -504,7 +512,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="confirm-password" className="text-slate-300">
+                        <Label htmlFor="confirm-password" className="text-foreground">
                           Confirm New Password
                         </Label>
                         <div className="relative">
@@ -513,14 +521,14 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                             type={showConfirmPassword ? "text" : "password"}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="bg-slate-700/50 border-slate-600 text-white focus:border-emerald-500 transition-all duration-300 pr-10"
+                            className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
                             placeholder="Confirm new password"
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
+                            className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           >
                             {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -528,7 +536,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                         </div>
                       </div>
                     </div>
-                    <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-300">
+                    <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
                       <Mail className="w-4 h-4" />
                       <AlertDescription>
                         For security, we'll send a verification code to your email before changing your password.
@@ -537,7 +545,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                     <Button
                       onClick={sendPasswordChangeCode}
                       disabled={loading}
-                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 hover:scale-105"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:scale-105"
                     >
                       {loading ? "Sending..." : "Send Verification Code"}
                     </Button>
@@ -545,14 +553,14 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                 ) : (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="verification-code" className="text-slate-300">
+                      <Label htmlFor="verification-code" className="text-foreground">
                         Verification Code
                       </Label>
                       <Input
                         id="verification-code"
                         value={verificationCode}
                         onChange={(e) => setVerificationCode(e.target.value)}
-                        className="bg-slate-700/50 border-slate-600 text-white focus:border-emerald-500 transition-all duration-300"
+                        className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300"
                         placeholder="Enter 6-digit code from email"
                         maxLength={6}
                       />
@@ -561,7 +569,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                       <Button
                         onClick={changePassword}
                         disabled={loading}
-                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 hover:scale-105"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:scale-105"
                       >
                         {loading ? "Changing..." : "Change Password"}
                       </Button>
@@ -571,7 +579,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                           setPasswordChangeStep("form")
                           setVerificationCode("")
                         }}
-                        className="border-slate-600 text-slate-300 hover:bg-slate-700 transition-all duration-300"
+                        className="border-border text-foreground hover:bg-muted transition-all duration-300"
                       >
                         Back
                       </Button>
@@ -583,37 +591,103 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
           </TabsContent>
 
           {/* Appearance Tab */}
-          <TabsContent value="appearance" className="animate-fade-in">
-            <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700/50 hover:bg-slate-800/60 transition-all duration-300">
+          <TabsContent value="appearance">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-emerald-300 flex items-center gap-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
                   <Palette className="w-5 h-5" />
                   Appearance Settings
                 </CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardDescription className="text-muted-foreground">
                   Customize the look and feel of your dashboard
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-slate-400">Appearance customization options coming soon...</p>
+              <CardContent className="space-y-6">
+                {/* Theme Selection */}
+                <div className="space-y-4">
+                  <Label className="text-foreground text-base font-semibold">Theme</Label>
+                  <p className="text-sm text-muted-foreground">Choose your preferred color scheme</p>
+
+                  {mounted && (
+                    <div className="grid grid-cols-3 gap-4">
+                      {/* Light Mode */}
+                      <button
+                        onClick={() => setTheme("light")}
+                        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-300 ${
+                          theme === "light"
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-muted hover:border-primary/50"
+                        }`}
+                      >
+                        <Sun className="w-8 h-8 mb-2 text-yellow-500" />
+                        <span className="text-sm font-medium text-foreground">Light</span>
+                      </button>
+
+                      {/* Dark Mode */}
+                      <button
+                        onClick={() => setTheme("dark")}
+                        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-300 ${
+                          theme === "dark"
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-muted hover:border-primary/50"
+                        }`}
+                      >
+                        <Moon className="w-8 h-8 mb-2 text-slate-400" />
+                        <span className="text-sm font-medium text-foreground">Dark</span>
+                      </button>
+
+                      {/* System Mode */}
+                      <button
+                        onClick={() => setTheme("system")}
+                        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-300 ${
+                          theme === "system"
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-muted hover:border-primary/50"
+                        }`}
+                      >
+                        <Monitor className="w-8 h-8 mb-2 text-blue-500" />
+                        <span className="text-sm font-medium text-foreground">System</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {!mounted && (
+                    <div className="grid grid-cols-3 gap-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Theme Info */}
+                <Alert className="border-primary/20 bg-primary/10 text-primary">
+                  <AlertDescription>
+                    {theme === "system"
+                      ? "Your theme will automatically match your system preferences."
+                      : theme === "light"
+                        ? "Light mode is active. The interface will use bright colors."
+                        : "Dark mode is active. The interface will use dark colors."}
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Danger Zone Tab */}
-          <TabsContent value="danger" className="animate-fade-in">
-            <Card className="bg-red-900/20 backdrop-blur-sm border-red-500/30 hover:bg-red-900/30 transition-all duration-300">
+          <TabsContent value="danger">
+            <Card className="bg-card border-destructive/20">
               <CardHeader>
-                <CardTitle className="text-red-300 flex items-center gap-2">
+                <CardTitle className="text-destructive flex items-center gap-2">
                   <Trash2 className="w-5 h-5" />
                   Delete Account
                 </CardTitle>
-                <CardDescription className="text-red-400">
+                <CardDescription className="text-destructive/70">
                   Permanently delete your account and all associated data
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Alert className="border-red-500/30 bg-red-500/10 text-red-300">
+                <Alert className="border-destructive/30 bg-destructive/10 text-destructive">
                   <AlertTriangle className="w-4 h-4" />
                   <AlertDescription>
                     <strong>Warning:</strong> This action cannot be undone. This will permanently delete your account
@@ -630,7 +704,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                 {deleteStep === "form" ? (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="delete-password" className="text-slate-300">
+                      <Label htmlFor="delete-password" className="text-foreground">
                         Confirm Password
                       </Label>
                       <div className="relative">
@@ -639,21 +713,21 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                           type={showDeletePassword ? "text" : "password"}
                           value={deletePassword}
                           onChange={(e) => setDeletePassword(e.target.value)}
-                          className="bg-slate-700/50 border-slate-600 text-white focus:border-red-500 transition-all duration-300 pr-10"
+                          className="bg-muted border-border text-foreground focus:border-destructive transition-all duration-300 pr-10"
                           placeholder="Enter your password to confirm"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-white"
+                          className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
                           onClick={() => setShowDeletePassword(!showDeletePassword)}
                         >
                           {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
                       </div>
                     </div>
-                    <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-300">
+                    <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
                       <Mail className="w-4 h-4" />
                       <AlertDescription>We'll send a verification code to confirm account deletion.</AlertDescription>
                     </Alert>
@@ -661,7 +735,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                       onClick={sendDeleteCode}
                       disabled={loading}
                       variant="destructive"
-                      className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 hover:scale-105"
+                      className="bg-destructive hover:bg-destructive/90 transition-all duration-300 hover:scale-105"
                     >
                       {loading ? "Sending..." : "Send Verification Code"}
                     </Button>
@@ -669,14 +743,14 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                 ) : (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="delete-verification-code" className="text-slate-300">
+                      <Label htmlFor="delete-verification-code" className="text-foreground">
                         Verification Code
                       </Label>
                       <Input
                         id="delete-verification-code"
                         value={verificationCode}
                         onChange={(e) => setVerificationCode(e.target.value)}
-                        className="bg-slate-700/50 border-slate-600 text-white focus:border-red-500 transition-all duration-300"
+                        className="bg-muted border-border text-foreground focus:border-destructive transition-all duration-300"
                         placeholder="Enter 6-digit code from email"
                         maxLength={6}
                       />
@@ -686,7 +760,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                         onClick={deleteAccount}
                         disabled={loading}
                         variant="destructive"
-                        className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-300 hover:scale-105"
+                        className="bg-destructive hover:bg-destructive/90 transition-all duration-300 hover:scale-105"
                       >
                         {loading ? "Deleting..." : "Delete Account"}
                       </Button>
@@ -696,7 +770,7 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                           setDeleteStep("form")
                           setVerificationCode("")
                         }}
-                        className="border-slate-600 text-slate-300 hover:bg-slate-700 transition-all duration-300"
+                        className="border-border text-foreground hover:bg-muted transition-all duration-300"
                       >
                         Back
                       </Button>

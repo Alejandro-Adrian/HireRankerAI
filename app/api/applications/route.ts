@@ -64,14 +64,14 @@ export async function POST(request: NextRequest) {
     const allFiles: { file: File; category: string; index: string }[] = []
 
     for (const [key, file] of fileEntries) {
-      if (file && typeof file === "object" && "name" in file && "size" in file && "type" in file) {
+      if (file instanceof File) {
         const index = key.split("_")[1]
         const category = (formData.get(`file_${index}_category`) as string) || "other"
 
-        allFiles.push({ file: file as File, category, index })
+        allFiles.push({ file, category, index })
 
         if (category === "resume") {
-          resumeFile = file as File
+          resumeFile = file
         }
       }
     }
