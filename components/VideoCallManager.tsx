@@ -260,8 +260,8 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
         // Map the data to ensure we have the required fields
         const mappedApplications = applicationsData.map((app: any) => ({
           id: app.id,
-          candidate_name: app.applicant_name || app.candidate_name || app.name || "Unknown Candidate",
-          candidate_email: app.applicant_email || app.candidate_email || app.email || "No email",
+          applicant_name: app.applicant_name || app.candidate_name || app.name || "Unknown Candidate",
+          applicant_email: app.applicant_email || app.candidate_email || app.email || "No email",
           ranking_title: app.ranking_title || "Unknown Position",
           ranking_id: rankingId,
         }))
@@ -560,9 +560,9 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
                           className="h-4 w-4 text-primary focus:ring-primary border-border rounded bg-background"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">{application.candidate_name}</p>
+                          <p className="font-medium text-foreground truncate">{application.applicant_name}</p>
                           <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                            {application.candidate_email}
+                            {application.applicant_email}
                           </p>
                         </div>
                       </div>
