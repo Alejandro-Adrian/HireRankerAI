@@ -49,3 +49,42 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const supabase = createClient()
+    const { id } = params
+    const body = await request.json()
+
+    const { status, ended_at, duration_seconds, transcript, summary } = body
+
+    const updateData: any = {}
+    if (status) updateData.status = status
+    if (ended_at) updateData.ended_at = ended_at
+    if (duration_seconds !== undefined) updateData.duration_seconds = duration_seconds
+    if (transcript) updateData.transcript = transcript
+    if (summary) updateData.summary = summary
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 })
+    }
+
+    updateData.updated_at = new Date().toISOString()
+
+    const { data, error } = await supabase
+      .from("video_sessions")
+      .update(updateData)
+      .eq("meeting_id", id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Database error:", error)
+      return NextResponse.json({ error: "Failed to update session" }, { status: 500 })
+    }
+
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error("Error updating session:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

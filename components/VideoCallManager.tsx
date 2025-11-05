@@ -1,6 +1,9 @@
 "use client"
 import { Video, Calendar, Users, Send, Plus, Eye, Trash2, ArrowLeft } from "lucide-react"
 import { useState, useEffect } from "react"
+import { revalidateVideoSessions } from "@/app/actions/video-sessions"
+import SuccessModal from "./SuccessModal"
+import SessionSummaryModal from "./SessionSummaryModal" // Import the new SessionSummaryModal component
 
 interface VideoCallManagerProps {
   rankings: any[]
@@ -28,7 +31,7 @@ interface Application {
   ranking_id: string
 }
 
-export default function VideoCallManager({ rankings, onBack, onNotification, user }: VideoCallManagerProps) {
+const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallManagerProps) => {
   const [sessions, setSessions] = useState<VideoSession[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -38,6 +41,13 @@ export default function VideoCallManager({ rankings, onBack, onNotification, use
   const [selectedRankingId, setSelectedRankingId] = useState<string>("")
   const [selectedApplicationIds, setSelectedApplicationIds] = useState<string[]>([])
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [successMessage, setSuccessMessage] = useState({ title: "", message: "" })
+
+  // State for summary modal
+  const [showSummaryModal, setShowSummaryModal] = useState(false)
+  const [selectedSessionForSummary, setSelectedSessionForSummary] = useState<VideoSession | null>(null)
 
   // Create session form
   const [sessionTitle, setSessionTitle] = useState("")
@@ -59,6 +69,167 @@ export default function VideoCallManager({ rankings, onBack, onNotification, use
       console.error("Error fetching sessions:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const refreshSessions = async () => {
+    try {
+      await revalidateVideoSessions()
+
+      const response = await fetch(`/api/video-sessions?_=${Date.now()}`, {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSessions(data)
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error("Error refreshing sessions:", error)
+      return false
+    }
+  }
+
+  const createSession = async () => {
+    if (!sessionTitle.trim()) {
+      onNotification("Please enter a session title", "error")
+      return
+    }
+
+    const meetingId = generateMeetingId()
+    const meetingUrl = `${window.location.origin}/video-call/${meetingId}?role=host`
+
+    let scheduledAt = null
+    if (scheduledDate && scheduledTime) {
+      scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+    }
+
+    try {
+      const response = await fetch("/api/video-sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: sessionTitle,
+          scheduled_at: scheduledAt,
+          meeting_url: meetingUrl,
+          meeting_id: meetingId,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        setSuccessMessage({
+          title: "Session Created!",
+          message: `Your video session "${sessionTitle}" has been created successfully. Click OK to proceed.`,
+        })
+        setShowSuccessModal(true)
+
+        setShowCreateModal(false)
+        setSessionTitle("")
+        setScheduledDate("")
+        setScheduledTime("")
+
+        // Store the meeting URL to open after modal closes
+        sessionStorage.setItem("meetingUrlToOpen", meetingUrl)
+      } else {
+        const error = await response.json()
+        onNotification(error.error || "Failed to create session", "error")
+      }
+    } catch (error) {
+      console.error("Error creating session:", error)
+      onNotification("Error creating session", "error")
+    }
+  }
+
+  const sendInvitations = async () => {
+    if (!selectedSession || selectedApplicationIds.length === 0) {
+      onNotification("Please select a session and at least one applicant", "error")
+      return
+    }
+
+    try {
+      const response = await fetch("/api/video-sessions/send-invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: selectedSession.id,
+          application_ids: selectedApplicationIds,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        if (data.sent_count > 0) {
+          setSuccessMessage({
+            title: "Invitations Sent!",
+            message: `Successfully sent invitations to ${data.sent_count} applicant${data.sent_count !== 1 ? "s" : ""}. Click OK to refresh the list.`,
+          })
+          setShowSuccessModal(true)
+
+          setShowSendModal(false)
+          setSelectedSession(null)
+          setSelectedApplicationIds([])
+          setSelectedRankingId("")
+        } else {
+          onNotification(data.message || "Failed to send invitations", "error")
+        }
+      } else {
+        onNotification(data.error || "Failed to send invitations", "error")
+      }
+    } catch (error) {
+      console.error("Error sending invitations:", error)
+      onNotification("Error sending invitations", "error")
+    }
+  }
+
+  const deleteSession = async (sessionId: string) => {
+    if (!confirm("Are you sure you want to delete this session?")) return
+
+    try {
+      const response = await fetch(`/api/video-sessions/${sessionId}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        setSuccessMessage({
+          title: "Session Deleted!",
+          message: "The video session has been deleted successfully. Click OK to refresh the list.",
+        })
+        setShowSuccessModal(true)
+
+        setSessions(sessions.filter((s) => s.id !== sessionId))
+      } else {
+        const error = await response.json()
+        onNotification(error.error || "Failed to delete session", "error")
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error)
+      onNotification("Error deleting session", "error")
+    }
+  }
+
+  const handleSuccessModalOk = async () => {
+    setShowSuccessModal(false)
+
+    // Check if there's a meeting URL to open
+    const meetingUrl = sessionStorage.getItem("meetingUrlToOpen")
+    if (meetingUrl) {
+      sessionStorage.removeItem("meetingUrlToOpen")
+      await refreshSessions()
+      window.open(meetingUrl, "_blank")
+    } else {
+      // Just refresh the sessions list
+      await refreshSessions()
     }
   }
 
@@ -107,102 +278,6 @@ export default function VideoCallManager({ rankings, onBack, onNotification, use
     return "meeting-" + Math.random().toString(36).substring(2, 15)
   }
 
-  const createSession = async () => {
-    if (!sessionTitle.trim()) {
-      onNotification("Please enter a session title", "error")
-      return
-    }
-
-    const meetingId = generateMeetingId()
-    const meetingUrl = `${window.location.origin}/video-call/${meetingId}?role=host`
-
-    let scheduledAt = null
-    if (scheduledDate && scheduledTime) {
-      scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
-    }
-
-    try {
-      const response = await fetch("/api/video-sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: sessionTitle,
-          scheduled_at: scheduledAt,
-          meeting_url: meetingUrl,
-          meeting_id: meetingId,
-        }),
-      })
-
-      if (response.ok) {
-        onNotification("Video session created successfully! Redirecting...", "success")
-
-        setShowCreateModal(false)
-        setSessionTitle("")
-        setScheduledDate("")
-        setScheduledTime("")
-
-        window.location.href = meetingUrl
-      } else {
-        onNotification("Failed to create session", "error")
-      }
-    } catch (error) {
-      console.error("Error creating session:", error)
-      onNotification("Error creating session", "error")
-    }
-  }
-
-  const sendInvitations = async () => {
-    if (!selectedSession || selectedApplicationIds.length === 0) {
-      onNotification("Please select a session and at least one applicant", "error")
-      return
-    }
-
-    try {
-      const response = await fetch("/api/video-sessions/send-invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: selectedSession.id,
-          application_ids: selectedApplicationIds,
-        }),
-      })
-
-      if (response.ok) {
-        onNotification(`Invitations sent to ${selectedApplicationIds.length} candidates!`, "success")
-        setShowSendModal(false)
-        setSelectedSession(null)
-        setSelectedApplicationIds([])
-        setSelectedRankingId("")
-      } else {
-        onNotification("Failed to send invitations", "error")
-      }
-    } catch (error) {
-      console.error("Error sending invitations:", error)
-      onNotification("Error sending invitations", "error")
-    }
-  }
-
-  const deleteSession = async (sessionId: string) => {
-    if (!confirm("Are you sure you want to delete this session?")) return
-
-    try {
-      const response = await fetch(`/api/video-sessions/${sessionId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        onNotification("Session deleted successfully! Refreshing...", "success")
-
-        window.location.reload()
-      } else {
-        onNotification("Failed to delete session", "error")
-      }
-    } catch (error) {
-      console.error("Error deleting session:", error)
-      onNotification("Error deleting session", "error")
-    }
-  }
-
   const handleSendInvitation = (session: VideoSession) => {
     setSelectedSession(session)
     setShowSendModal(true)
@@ -236,6 +311,12 @@ export default function VideoCallManager({ rankings, onBack, onNotification, use
       default:
         return "bg-gray-100 text-gray-800"
     }
+  }
+
+  // Function to handle viewing summary
+  const handleViewSummary = (session: VideoSession) => {
+    setSelectedSessionForSummary(session)
+    setShowSummaryModal(true)
   }
 
   return (
@@ -324,20 +405,34 @@ export default function VideoCallManager({ rankings, onBack, onNotification, use
                       <p className="text-xs sm:text-sm text-muted-foreground font-mono">ID: {session.meeting_id}</p>
                     </div>
                     <div className="flex items-center space-x-2 sm:space-x-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
-                      <button
-                        onClick={() => handleSendInvitation(session)}
-                        className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
-                      >
-                        <Send className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Send</span>
-                      </button>
-                      <button
-                        onClick={() => window.open(session.meeting_url, "_blank")}
-                        className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
-                      >
-                        <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Join as Host</span>
-                      </button>
+                      {session.status === "completed" && (
+                        <button
+                          onClick={() => handleViewSummary(session)}
+                          className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
+                          title="View session summary"
+                        >
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden sm:inline">Summary</span>
+                        </button>
+                      )}
+                      {session.status !== "completed" && (
+                        <>
+                          <button
+                            onClick={() => handleSendInvitation(session)}
+                            className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
+                          >
+                            <Send className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span>Send</span>
+                          </button>
+                          <button
+                            onClick={() => window.open(session.meeting_url, "_blank")}
+                            className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
+                          >
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span>Join</span>
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={() => deleteSession(session.id)}
                         className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-all duration-200 hover:scale-105"
@@ -501,6 +596,28 @@ export default function VideoCallManager({ rankings, onBack, onNotification, use
           </div>
         </div>
       )}
+
+      {selectedSessionForSummary && (
+        <SessionSummaryModal
+          isOpen={showSummaryModal}
+          session={selectedSessionForSummary}
+          onClose={() => {
+            setShowSummaryModal(false)
+            setSelectedSessionForSummary(null)
+          }}
+        />
+      )}
+
+      <SuccessModal
+        isOpen={showSuccessModal}
+        title={successMessage.title}
+        message={successMessage.message}
+        onOk={handleSuccessModalOk}
+        okButtonText="OK"
+      />
     </div>
   )
 }
+
+export { VideoCallManager as default }
+export { VideoCallManager }

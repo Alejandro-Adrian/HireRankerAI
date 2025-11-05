@@ -21,16 +21,18 @@ export default async function ApplicationPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground mb-2">{ranking.title}</h1>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-2">{ranking.title}</h1>
           <p className="text-lg text-muted-foreground capitalize">{ranking.position.replace("/", " / ")}</p>
-          {ranking.description && <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">{ranking.description}</p>}
+          {ranking.description && (
+            <p className="text-muted-foreground mt-4 max-w-2xl mx-auto leading-relaxed">{ranking.description}</p>
+          )}
         </div>
 
         <ApplicationForm ranking={ranking} />
       </div>
-    </div>
+    </main>
   )
 }

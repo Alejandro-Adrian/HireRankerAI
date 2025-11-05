@@ -83,27 +83,25 @@ export default function AlgorithmPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header Section */}
-      <div className="bg-muted border-b">
+    <main className="min-h-screen bg-background">
+      <header className="bg-muted border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="flex items-center gap-3 mb-4">
             <Brain className="h-8 w-8 text-primary" />
             <h1 className="text-4xl font-bold text-foreground">HR Scoring Algorithm</h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-3xl">
+          <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
             Our intelligent scoring system uses advanced OCR technology and weighted algorithms to evaluate candidates
             fairly and consistently. Learn how each criterion is assessed and scored.
           </p>
         </div>
-      </div>
+      </header>
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-12">
-        {/* Algorithm Overview */}
         <section>
           <div className="flex items-center gap-3 mb-6">
             <Calculator className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-bold">How It Works</h2>
+            <h2 className="text-2xl font-bold text-foreground">How It Works</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -160,39 +158,38 @@ export default function AlgorithmPage() {
           </div>
         </section>
 
-        {/* Scoring Criteria Details */}
         <section>
           <div className="flex items-center gap-3 mb-6">
             <BarChart3 className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-bold">Scoring Criteria</h2>
+            <h2 className="text-2xl font-bold text-foreground">Scoring Criteria</h2>
           </div>
 
           <div className="grid gap-6">
             {criteriaExamples.map((criterion, index) => (
               <Card key={index}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4">
                     <CardTitle className="flex items-center gap-3">
                       {criterion.icon}
                       {criterion.name}
                       <Badge variant="secondary">{criterion.weight}% Weight</Badge>
                     </CardTitle>
-                    <div className="text-sm text-muted-foreground">Score Range: {criterion.scoreRange}</div>
+                    <div className="text-sm text-muted-foreground whitespace-nowrap">
+                      Score Range: {criterion.scoreRange}
+                    </div>
                   </div>
                   <CardDescription>{criterion.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Evaluation Factors:</h4>
-                      <div className="grid md:grid-cols-2 gap-2">
-                        {criterion.factors.map((factor, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-accent rounded-full" />
-                            <span className="text-sm text-muted-foreground">{factor}</span>
-                          </div>
-                        ))}
-                      </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Evaluation Factors:</h4>
+                    <div className="grid md:grid-cols-2 gap-2">
+                      {criterion.factors.map((factor, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-accent rounded-full flex-shrink-0" />
+                          <span className="text-sm text-muted-foreground">{factor}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -201,11 +198,10 @@ export default function AlgorithmPage() {
           </div>
         </section>
 
-        {/* Scoring Example */}
         <section>
           <div className="flex items-center gap-3 mb-6">
             <TrendingUp className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-bold">Scoring Example</h2>
+            <h2 className="text-2xl font-bold text-foreground">Scoring Example</h2>
           </div>
 
           <Card>
@@ -222,7 +218,7 @@ export default function AlgorithmPage() {
 
                   return (
                     <div key={key} className="space-y-2">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-4">
                         <span className="font-medium capitalize">{key}</span>
                         <div className="flex items-center gap-4 text-sm">
                           <span>Score: {score}/100</span>
@@ -240,7 +236,7 @@ export default function AlgorithmPage() {
 
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-lg font-semibold">Final Weighted Score:</span>
+                  <span className="text-lg font-semibold text-foreground">Final Weighted Score:</span>
                   <span className="text-2xl font-bold text-primary">{calculateWeightedScore()}/100</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -251,11 +247,10 @@ export default function AlgorithmPage() {
           </Card>
         </section>
 
-        {/* Key Features */}
         <section>
           <div className="flex items-center gap-3 mb-6">
             <Award className="h-6 w-6 text-primary" />
-            <h2 className="text-2xl font-bold">Key Features</h2>
+            <h2 className="text-2xl font-bold text-foreground">Key Features</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -309,6 +304,6 @@ export default function AlgorithmPage() {
           </div>
         </section>
       </div>
-    </div>
+    </main>
   )
 }

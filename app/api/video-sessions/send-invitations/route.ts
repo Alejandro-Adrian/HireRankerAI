@@ -33,9 +33,13 @@ export async function POST(request: NextRequest) {
       `)
       .in("id", application_ids)
 
-    if (appsError || !applications) {
+    if (appsError) {
       console.error("Applications fetch error:", appsError)
-      return NextResponse.json({ error: "Applications not found" }, { status: 404 })
+      return NextResponse.json({ error: "Failed to fetch applications" }, { status: 500 })
+    }
+
+    if (!applications || applications.length === 0) {
+      return NextResponse.json({ error: "No applications found" }, { status: 404 })
     }
 
     let successCount = 0
@@ -70,6 +74,16 @@ export async function POST(request: NextRequest) {
 
         if (emailResult.success) {
           successCount++
+          await supabase.from("video_session_participants").upsert(
+            {
+              session_id: session_id,
+              application_id: application.id,
+              applicant_email: candidateEmail,
+              applicant_name: candidateName,
+              invited_at: new Date().toISOString(),
+            },
+            { onConflict: "session_id,application_id" },
+          )
         } else {
           failureCount++
           console.error("Email send failed for:", candidateEmail, emailResult.error)
