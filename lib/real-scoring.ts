@@ -96,7 +96,7 @@ export const realScoring = {
 
             if (searchText.includes(keyword)) {
               criteriaScore = 100 // Found the keyword - full points
-              console.log(`[v0] Found keyword "${keyword}" in application for ${application.applicant_name}`)
+              console.log(`Found keyword "${keyword}" in application for ${application.applicant_name}`)
             } else {
               // Check for partial matches or related terms
               const words = keyword.split(" ")
@@ -105,12 +105,12 @@ export const realScoring = {
               if (partialMatches > 0) {
                 criteriaScore = Math.min(75, partialMatches * 25) // Partial credit for related terms
                 console.log(
-                  `[v0] Found ${partialMatches} partial matches for "${keyword}" in application for ${application.applicant_name}`,
+                  `Found ${partialMatches} partial matches for "${keyword}" in application for ${application.applicant_name}`,
                 )
               } else {
                 criteriaScore = 0 // No match found
                 console.log(
-                  `[v0] No matches found for keyword "${keyword}" in application for ${application.applicant_name}`,
+                  `No matches found for keyword "${keyword}" in application for ${application.applicant_name}`,
                 )
               }
             }
@@ -131,13 +131,13 @@ export const realScoring = {
       criteriaCount++
 
       console.log(
-        `[v0] Scored ${criteriaId}: ${criteriaScore} (weight: ${weight}%, weighted: ${weightedScore.toFixed(1)})`,
+        `Scored ${criteriaId}: ${criteriaScore} (weight: ${weight}%, weighted: ${weightedScore.toFixed(1)})`,
       )
     })
 
     const finalScore = criteriaCount > 0 ? Math.round(totalScore) : 0
 
-    console.log(`[v0] Final score for ${application.applicant_name}: ${finalScore}% (${criteriaCount} criteria)`)
+    console.log(`Final score for ${application.applicant_name}: ${finalScore}% (${criteriaCount} criteria)`)
 
     return {
       criteriaScores: scores,

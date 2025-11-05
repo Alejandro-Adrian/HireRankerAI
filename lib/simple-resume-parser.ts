@@ -31,10 +31,10 @@ export class SimpleResumeParser {
         certifications: this.extractCertifications(extractedData.rawText),
       }
 
-      console.log("[v0] Advanced parsed resume data:", parsedData)
+      console.log("Advanced parsed resume data:", parsedData)
       return parsedData
     } catch (error) {
-      console.error("[v0] Advanced resume parsing error:", error)
+      console.error("Advanced resume parsing error:", error)
       throw new Error(`Resume parsing failed: ${error.message}`)
     }
   }
