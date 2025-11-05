@@ -11,7 +11,7 @@ export interface ExtractedResumeData {
 }
 
 export class AdvancedOCRService {
-  private readonly API_KEY = "K82009408488957"
+  private readonly API_KEY = "K87673133188957"
   private readonly API_URL = "https://api.ocr.space/parse/image"
 
   private readonly COMMON_FIRST_NAMES = new Set([
@@ -502,13 +502,25 @@ export class AdvancedOCRService {
         return await this.extractFromDocumentFile(file)
       }
 
-      const processedFile = await this.convertToSupportedFormat(file)
+      let processFile = file
+      const supportedTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"]
+
+      // Only convert on client if needed (this won't execute on server)
+      if (!supportedTypes.includes(file.type) && typeof OffscreenCanvas !== "undefined") {
+        try {
+          processFile = await this.convertToSupportedFormat(file)
+        } catch (error) {
+          console.warn("[v0] Format conversion failed, using original:", error)
+          // Continue with original file
+        }
+      }
+
       let base64: string
 
-      if (processedFile.type === "application/pdf" || processedFile.name.toLowerCase().endsWith(".pdf")) {
+      if (processFile.type === "application/pdf" || processFile.name.toLowerCase().endsWith(".pdf")) {
         try {
-          base64 = await this.fileToBase64ServerSide(processedFile)
-          return await this.extractFromPDFEnhanced(base64, processedFile.name)
+          base64 = await this.fileToBase64ServerSide(processFile)
+          return await this.extractFromPDFEnhanced(base64, processFile.name)
         } catch (pdfError) {
           console.error("[v0] PDF processing failed:", pdfError)
           throw new Error(
@@ -516,7 +528,7 @@ export class AdvancedOCRService {
           )
         }
       } else {
-        base64 = await this.fileToBase64ServerSide(processedFile)
+        base64 = await this.fileToBase64ServerSide(processFile)
         return await this.extractFromImageEnhanced(base64)
       }
     } catch (error) {
@@ -980,9 +992,9 @@ export class AdvancedOCRService {
     // Skip lines that are clearly not names
     const nonNamePatterns = [
       /^(resume|cv|curriculum vitae|profile|summary|objective|experience|education|skills|contact|phone|email|address|references|certifications?|projects?|achievements?|awards?|languages?|interests?|hobbies?)$/i,
-      /^(kitchen helper|chef|cook|manager|assistant|supervisor|director|coordinator|specialist|analyst|developer|engineer|designer|consultant|administrator|executive|officer|representative|associate|intern|trainee)$/i,
-      /^(new york|los angeles|chicago|houston|phoenix|philadelphia|san antonio|san diego|dallas|san jose|austin|jacksonville|fort worth|columbus|charlotte|san francisco|indianapolis|seattle|denver|washington|boston|el paso|detroit|nashville|portland|oklahoma city|las vegas|baltimore|louisville|milwaukee|albuquerque|tucson|fresno|sacramento|mesa|kansas city|atlanta|long beach|colorado springs|raleigh|miami|virginia beach|omaha|oakland|minneapolis|tulsa|cleveland|wichita|arlington|new orleans|bakersfield|tampa|honolulu|aurora|anaheim|santa ana|st. louis|riverside|corpus christi|lexington|pittsburgh|anchorage|stockton|cincinnati|saint paul|toledo|newark|greensboro|plano|henderson|lincoln|buffalo|jersey city|chula vista|fort wayne|orlando|st. petersburg|chandler|laredo|norfolk|durham|madison|lubbock|irvine|winston-salem|glendale|garland|hialeah|reno|chesapeake|gilbert|baton rouge|irving|scottsdale|north las vegas|fremont|boise|richmond|san bernardino|birmingham|spokane|rochester|des moines|modesto|fayetteville|tacoma|oxnard|fontana|columbus|montgomery|moreno valley|shreveport|aurora|yonkers|akron|huntington beach|little rock|augusta|amarillo|glendale|mobile|grand rapids|salt lake city|tallahassee|huntsville|grand prairie|knoxville|worcester|newport news|brownsville|overland park|santa clarita|providence|garden grove|chattanooga|oceanside|jackson|fort lauderdale|santa rosa|rancho cucamonga|port st. lucie|tempe|ontario|vancouver|cape coral|sioux falls|springfield|peoria|pembroke pines|elk grove|salem|lancaster|corona|eugene|palmdale|salinas|springfield|pasadena|fort collins|hayward|pomona|cary|rockford|alexandria|escondido|mckinney|kansas city|joliet|sunnyvale|torrance|bridgeport|lakewood|hollywood|paterson|naperville|syracuse|mesquite|dayton|savannah|clarksville|orange|pasadena|fullerton|killeen|frisco|hampton|mcallen|warren|west valley city|columbia|olathe|sterling heights|new haven|miramar|waco|thousand oaks|cedar rapids|charleston|sioux city|round rock|fargo|carrollton|roseville|concord|thornton|visalia|beaumont|gainesville|simi valley|denton|green bay|lowell|pueblo|wichita falls|murfreesboro|lafayette|norwalk|bellingham|westminster|ventura|ann arbor|high point|hemet|west jordan|lakeland|nashua|midland|daly city|boulder|west palm beach|mckinney|clearwater|cambridge|billings|west covina|richmond|pearland|richardson|murrieta|antioch|temecula|inglewood|miami gardens|bloomington|santa maria|victorville|rialto|carson|santa monica|colton|college station|clovis|sandy springs|league city|tyler|sandy|sunrise|edinburg|el monte|carmel|tuscaloosa|roswell|clinton|vacaville|davie|laguna niguel|milpitas|upland|westland|cumming|norwalk|carlsbad|plantation|hammond|alpharetta|pompano beach|springfield|boynton beach|missouri city|vallejo|new bedford|quincy|brockton|roanoke|santa clara|lynn|lakewood|gary|lawrence|fort smith|evansville|independence|provo|athens|peoria|huntsville|reading|davenport|arvada|miami beach|troy|westminster|bloomington|dearborn|racine|yuma|burbank|fishers|ann arbor|richardson|pueblo west|broken arrow|sandy|renton|jurupa valley|compton|san mateo|las cruces|south bend)$/i,
-      /^\d+/, // Lines starting with numbers
+      /^(kitchen helper|chef|cook|manager|assistant|supervisor|director|coordinator|specialist|analyst|developer|engineer|designer|consultant|administrator|executive|officer|representative|associate|intern|trainee|server|waiter|waitress|bartender|host|hostess|cashier|sales|marketing|hr|human resources|accounting|finance|it|information technology|customer service|operations|logistics|maintenance|security|receptionist|secretary|administrative|clerical|data entry|quality assurance|qa|project manager|team lead|senior|junior|lead|principal|vice president|vp|ceo|cfo|cto|coo|president|founder|owner|partner|contractor|freelancer|consultant|advisor|board member|volunteer|student|graduate|undergraduate|intern|trainee|apprentice|entry level|experienced|professional|expert|specialist|generalist|multi-skilled|cross-functional|bilingual|multilingual|certified|licensed|registered|accredited|qualified|skilled|experienced|seasoned|veteran|senior level|mid level|entry level|junior level|associate level|manager level|director level|executive level|c-level|upper management|middle management|lower management|non-management|individual contributor|team player|self-starter|motivated|driven|results-oriented|goal-oriented|detail-oriented|customer-focused|client-focused|service-oriented|quality-focused|safety-conscious|cost-effective|efficient|productive|innovative|creative|analytical|strategic|tactical|operational|technical|non-technical|hands-on|leadership|management|supervisory|mentoring|coaching|training|teaching|presenting|public speaking|communication|interpersonal|organizational|time management|multitasking|prioritization|problem-solving|troubleshooting|decision-making|critical thinking|analytical thinking|strategic thinking|creative thinking|outside-the-box thinking|innovative thinking|collaborative|team-oriented|independent|self-motivated|proactive|reactive|flexible|adaptable|versatile|reliable|dependable|trustworthy|honest|ethical|professional|courteous|friendly|outgoing|personable|approachable|patient|calm|composed|confident|assertive|diplomatic|tactful|discreet|confidential|loyal|committed|dedicated|passionate|enthusiastic|energetic|dynamic|ambitious|career-focused|growth-oriented|learning-oriented|continuous improvement|best practices|industry standards|regulatory compliance|policy adherence|procedure following|protocol compliance|safety standards|quality standards|performance standards|productivity standards|efficiency standards|customer satisfaction|client satisfaction|stakeholder satisfaction|employee satisfaction|team satisfaction|organizational satisfaction|company satisfaction|business satisfaction|operational excellence|service excellence|quality excellence|performance excellence|leadership excellence|management excellence|technical excellence|professional excellence|personal excellence|continuous excellence|sustainable excellence|measurable excellence|demonstrable excellence|proven excellence|recognized excellence|awarded excellence|certified excellence|accredited excellence|licensed excellence|registered excellence|qualified excellence|experienced excellence|seasoned excellence|veteran excellence|expert excellence|specialist excellence|generalist excellence|multi-skilled excellence|cross-functional excellence|bilingual excellence|multilingual excellence)$/i,
+      /^(new york|los angeles|chicago|houston|phoenix|philadelphia|san antonio|san diego|dallas|san jose|austin|jacksonville|fort worth|columbus|charlotte|san francisco|indianapolis|seattle|denver|washington|boston|el paso|detroit|nashville|portland|oklahoma city|las vegas|baltimore|louisville|milwaukee|albuquerque|tucson|fresno|sacramento|mesa|kansas city|atlanta|long beach|colorado springs|raleigh|miami|virginia beach|omaha|oakland|minneapolis|tulsa|cleveland|wichita|arlington|new orleans|bakersfield|tampa|honolulu|aurora|anaheim|santa ana|st. louis|riverside|corpus christi|lexington|pittsburgh|anchorage|stockton|cincinnati|saint paul|toledo|newark|greensboro|plano|henderson|lincoln|buffalo|jersey city|chula vista|fort wayne|orlando|st. petersburg|chandler|laredo|norfolk|durham|madison|lubbock|irvine|winston-salem|glendale|garland|hialeah|chesapeake|gilbert|baton rouge|irving|scottsdale|north las vegas|fremont|boise|richmond|san bernardino|birmingham|spokane|rochester|des moines|modesto|fayetteville|tacoma|oxnard|fontana|columbus|montgomery|moreno valley|shreveport|aurora|yonkers|akron|huntington beach|little rock|augusta|amarillo|glendale|mobile|grand rapids|salt lake city|tallahassee|huntsville|grand prairie|knoxville|worcester|newport news|brownsville|overland park|santa clarita|providence|garden grove|chattanooga|oceanside|jackson|fort lauderdale|santa rosa|rancho cucamonga|port st. lucie|tempe|ontario|vancouver|cape coral|sioux falls|springfield|peoria|pembroke pines|elk grove|salem|lancaster|corona|eugene|palmdale|salinas|springfield|pasadena|fort collins|hayward|pomona|cary|rockford|alexandria|escondido|mckinney|kansas city|joliet|sunnyvale|torrance|bridgeport|lakewood|hollywood|paterson|naperville|syracuse|mesquite|dayton|savannah|clarksville|orange|pasadena|fullerton|killeen|frisco|hampton|mcallen|warren|west valley city|columbia|olathe|sterling heights|new haven|miramar|waco|thousand oaks|cedar rapids|charleston|sioux city|round rock|fargo|carrollton|roseville|concord|thornton|visalia|beaumont|gainesville|simi valley|denton|green bay|lowell|pueblo|wichita falls|murfreesboro|lafayette|norwalk|bellingham|westminster|ventura|ann arbor|high point|hemet|west jordan|lakeland|nashua|midland|daly city|boulder|west palm beach|mckinney|clearwater|cambridge|billings|west covina|richmond|pearland|richardson|murrieta|antioch|temecula|inglewood|miami gardens|bloomington|santa maria|victorville|rialto|carson|santa monica|colton|college station|clovis|sandy springs|league city|tyler|sandy|sunrise|edinburg|el monte|carmel|tuscaloosa|roswell|clinton|vacaville|davie|laguna niguel|milpitas|upland|westland|cumming|norwalk|carlsbad|plantation|hammond|alpharetta|pompano beach|springfield|boynton beach|missouri city|vallejo|new bedford|quincy|brockton|roanoke|santa clara|lynn|lakewood|gary|lawrence|fort smith|evansville|independence|provo|athens|peoria|huntsville|reading|davenport|arvada|miami beach|troy|westminster|bloomington|dearborn|racine|yuma|burbank|fishers|ann arbor|richardson|pueblo west|broken arrow|sandy|renton|jurupa valley|compton|san mateo|las cruces|south bend)$/i,
+      /^d+/g, // Lines starting with numbers
       /^[^a-zA-Z]/, // Lines not starting with letters
       /^.{1,2}$/, // Very short lines
       /^.{50,}$/, // Very long lines
@@ -1004,7 +1016,7 @@ export class AdvancedOCRService {
       /^(kitchen helper|chef|cook|manager|assistant|supervisor|director|coordinator|specialist|analyst|developer|engineer|designer|consultant|administrator|executive|officer|representative|associate|intern|trainee|server|waiter|waitress|bartender|host|hostess|cashier|sales|marketing|hr|human resources|accounting|finance|it|information technology|customer service|operations|logistics|maintenance|security|receptionist|secretary|administrative|clerical|data entry|quality assurance|qa|project manager|team lead|senior|junior|lead|principal|vice president|vp|ceo|cfo|cto|coo|president|founder|owner|partner|contractor|freelancer|consultant|advisor|board member|volunteer|student|graduate|undergraduate|intern|trainee|apprentice|entry level|experienced|professional|expert|specialist|generalist|multi-skilled|cross-functional|bilingual|multilingual|certified|licensed|registered|accredited|qualified|skilled|experienced|seasoned|veteran|senior level|mid level|entry level|junior level|associate level|manager level|director level|executive level|c-level|upper management|middle management|lower management|non-management|individual contributor|team player|self-starter|motivated|driven|results-oriented|goal-oriented|detail-oriented|customer-focused|client-focused|service-oriented|quality-focused|safety-conscious|cost-effective|efficient|productive|innovative|creative|analytical|strategic|tactical|operational|technical|non-technical|hands-on|leadership|management|supervisory|mentoring|coaching|training|teaching|presenting|public speaking|communication|interpersonal|organizational|time management|multitasking|prioritization|problem-solving|troubleshooting|decision-making|critical thinking|analytical thinking|strategic thinking|creative thinking|outside-the-box thinking|innovative thinking|collaborative|team-oriented|independent|self-motivated|proactive|reactive|flexible|adaptable|versatile|reliable|dependable|trustworthy|honest|ethical|professional|courteous|friendly|outgoing|personable|approachable|patient|calm|composed|confident|assertive|diplomatic|tactful|discreet|confidential|loyal|committed|dedicated|passionate|enthusiastic|energetic|dynamic|ambitious|career-focused|growth-oriented|learning-oriented|continuous improvement|best practices|industry standards|regulatory compliance|policy adherence|procedure following|protocol compliance|safety standards|quality standards|performance standards|productivity standards|efficiency standards|customer satisfaction|client satisfaction|stakeholder satisfaction|employee satisfaction|team satisfaction|organizational satisfaction|company satisfaction|business satisfaction|operational excellence|service excellence|quality excellence|performance excellence|leadership excellence|management excellence|technical excellence|professional excellence|personal excellence|continuous excellence|sustainable excellence|measurable excellence|demonstrable excellence|proven excellence|recognized excellence|awarded excellence|certified excellence|accredited excellence|licensed excellence|registered excellence|qualified excellence|experienced excellence|seasoned excellence|veteran excellence|expert excellence|specialist excellence|generalist excellence|multi-skilled excellence|cross-functional excellence|bilingual excellence|multilingual excellence)$/i
 
     const locations =
-      /^(new york|los angeles|chicago|houston|phoenix|philadelphia|san antonio|san diego|dallas|san jose|austin|jacksonville|fort worth|columbus|charlotte|san francisco|indianapolis|seattle|denver|washington|boston|el paso|detroit|nashville|portland|oklahoma city|las vegas|baltimore|louisville|milwaukee|albuquerque|tucson|fresno|sacramento|mesa|kansas city|atlanta|long beach|colorado springs|raleigh|miami|virginia beach|omaha|oakland|minneapolis|tulsa|cleveland|wichita|arlington|new orleans|bakersfield|tampa|honolulu|aurora|anaheim|santa ana|st. louis|riverside|corpus christi|lexington|pittsburgh|anchorage|stockton|cincinnati|saint paul|toledo|newark|greensboro|plano|henderson|lincoln|buffalo|jersey city|chula vista|fort wayne|orlando|st. petersburg|chandler|laredo|norfolk|durham|madison|lubbock|irvine|winston-salem|glendale|garland|hialeah|chesapeake|gilbert|baton rouge|irving|scottsdale|north las vegas|fremont|boise|richmond|san bernardino|birmingham|spokane|rochester|des moines|modesto|fayetteville|tacoma|oxnard|fontana|columbus|montgomery|moreno valley|shreveport|aurora|yonkers|akron|huntington beach|little rock|augusta|amarillo|glendale|mobile|grand rapids|salt lake city|tallahassee|huntsville|grand prairie|knoxville|worcester|newport news|brownsville|overland park|santa clarita|providence|garden grove|chattanooga|oceanside|jackson|fort lauderdale|santa rosa|rancho cucamonga|port st. lucie|tempe|ontario|vancouver|cape coral|sioux falls|springfield|peoria|pembroke pines|elk grove|salem|lancaster|corona|eugene|palmdale|salinas|springfield|pasadena|fort collins|hayward|pomona|cary|rockford|alexandria|escondido|mckinney|kansas city|joliet|sunnyvale|torrance|bridgeport|lakewood|hollywood|paterson|naperville|syracuse|mesquite|dayton|savannah|clarksville|orange|pasadena|fullerton|killeen|frisco|hampton|mcallen|warren|west valley city|columbia|olathe|sterling heights|new haven|miramar|waco|thousand oaks|cedar rapids|charleston|sioux city|round rock|fargo|carrollton|roseville|concord|thornton|visalia|beaumont|gainesville|simi valley|denton|green bay|lowell|pueblo|wichita falls|murfreesboro|lafayette|norwalk|bellingham|westminster|ventura|ann arbor|high point|hemet|west jordan|lakeland|nashua|midland|daly city|boulder|west palm beach|mckinney|clearwater|cambridge|billings|west covina|richmond|pearland|richardson|murrieta|antioch|temecula|inglewood|miami gardens|bloomington|santa maria|victorville|rialto|carson|santa monica|colton|college station|clovis|sandy springs|league city|tyler|sandy|sunrise|edinburg|el monte|carmel|tuscaloosa|roswell|clinton|vacaville|davie|laguna niguel|milpitas|upland|westland|cumming|norwalk|carlsbad|plantation|hammond|alpharetta|springfield|boynton beach|missouri city|vallejo|new bedford|quincy|brockton|roanoke|santa clara|lynn|lakewood|gary|lawrence|fort smith|evansville|independence|provo|athens|peoria|huntsville|reading|davenport|arvada|miami beach|troy|westminster|bloomington|dearborn|racine|yuma|burbank|fishers|ann arbor|richardson|pueblo west|broken arrow|sandy|renton|jurupa valley|compton|san mateo|las cruces|south bend|california|texas|florida|new york|pennsylvania|illinois|ohio|georgia|north carolina|michigan|new jersey|virginia|washington|arizona|massachusetts|tennessee|indiana|missouri|maryland|wisconsin|colorado|minnesota|south carolina|alabama|louisiana|kentucky|oregon|oklahoma|connecticut|utah|iowa|nevada|arkansas|mississippi|kansas|new mexico|nebraska|west virginia|idaho|hawaii|new hampshire|maine|montana|rhode island|delaware|south dakota|north dakota|alaska|vermont|wyoming|ca|tx|fl|ny|pa|il|oh|ga|nc|mi|nj|va|wa|az|ma|tn|in|mo|md|wi|co|mn|sc|al|la|ky|or|ok|ct|ut|ia|nv|ar|ms|ks|nm|ne|wv|id|hi|nh|me|mt|ri|de|sd|nd|ak|vt|wy|united states|usa|america|canada|mexico|uk|united kingdom|england|scotland|wales|ireland|france|germany|italy|spain|portugal|netherlands|belgium|switzerland|austria|sweden|norway|denmark|finland|poland|czech republic|hungary|romania|bulgaria|greece|turkey|russia|ukraine|belarus|lithuania|latvia|estonia|croatia|serbia|bosnia|montenegro|macedonia|albania|slovenia|slovakia|moldova|georgia|armenia|azerbaijan|kazakhstan|uzbekistan|turkmenistan|kyrgyzstan|tajikistan|afghanistan|pakistan|india|bangladesh|sri lanka|nepal|bhutan|maldives|myanmar|thailand|laos|cambodia|vietnam|malaysia|singapore|brunei|indonesia|philippines|china|japan|south korea|north korea|mongolia|taiwan|hong kong|macau|australia|new zealand|fiji|papua new guinea|solomon islands|vanuatu|new caledonia|samoa|tonga|kiribati|tuvalu|nauru|palau|marshall islands|micronesia|guam|american samoa|northern mariana islands|cook islands|niue|tokelau|wallis and futuna|french polynesia|pitcairn islands|easter island|antarctica)$/i
+      /^(new york|los angeles|chicago|houston|phoenix|philadelphia|san antonio|san diego|dallas|san jose|austin|jacksonville|fort worth|columbus|charlotte|san francisco|indianapolis|seattle|denver|washington|boston|el paso|detroit|nashville|portland|oklahoma city|las vegas|baltimore|louisville|milwaukee|albuquerque|tucson|fresno|sacramento|mesa|kansas city|atlanta|long beach|colorado springs|raleigh|miami|virginia beach|omaha|oakland|minneapolis|tulsa|cleveland|wichita|arlington|new orleans|bakersfield|tampa|honolulu|aurora|anaheim|santa ana|st. louis|riverside|corpus christi|lexington|pittsburgh|anchorage|stockton|cincinnati|saint paul|toledo|newark|greensboro|plano|henderson|lincoln|buffalo|jersey city|chula vista|fort wayne|orlando|st. petersburg|chandler|laredo|norfolk|durham|madison|lubbock|irvine|winston-salem|glendale|garland|hialeah|chesapeake|gilbert|baton rouge|irving|scottsdale|north las vegas|fremont|boise|richmond|san bernardino|birmingham|spokane|rochester|des moines|modesto|fayetteville|tacoma|oxnard|fontana|columbus|montgomery|moreno valley|shreveport|aurora|yonkers|akron|huntington beach|little rock|augusta|amarillo|glendale|mobile|grand rapids|salt lake city|tallahassee|huntsville|grand prairie|knoxville|worcester|newport news|brownsville|overland park|santa clarita|providence|garden grove|chattanooga|oceanside|jackson|fort lauderdale|santa rosa|rancho cucamonga|port st. lucie|tempe|ontario|vancouver|cape coral|sioux falls|springfield|peoria|pembroke pines|elk grove|salem|lancaster|corona|eugene|palmdale|salinas|springfield|pasadena|fort collins|hayward|pomona|cary|rockford|alexandria|escondido|mckinney|kansas city|joliet|sunnyvale|torrance|bridgeport|lakewood|hollywood|paterson|naperville|syracuse|mesquite|dayton|savannah|clarksville|orange|pasadena|fullerton|killeen|frisco|hampton|mcallen|warren|west valley city|columbia|olathe|sterling heights|new haven|miramar|waco|thousand oaks|cedar rapids|charleston|sioux city|round rock|fargo|carrollton|roseville|concord|thornton|visalia|beaumont|gainesville|simi valley|denton|green bay|lowell|pueblo|wichita falls|murfreesboro|lafayette|norwalk|bellingham|westminster|ventura|ann arbor|high point|hemet|west jordan|lakeland|nashua|midland|daly city|boulder|west palm beach|mckinney|clearwater|cambridge|billings|west covina|richmond|pearland|richardson|murrieta|antioch|temecula|inglewood|miami gardens|bloomington|santa maria|victorville|rialto|carson|santa monica|colton|college station|clovis|sandy springs|league city|tyler|sandy|sunrise|edinburg|el monte|carmel|tuscaloosa|roswell|clinton|vacaville|davie|laguna niguel|milpitas|upland|westland|cumming|norwalk|carlsbad|plantation|hammond|alpharetta|california|texas|florida|new york|pennsylvania|illinois|ohio|georgia|north carolina|michigan|new jersey|virginia|washington|arizona|massachusetts|tennessee|indiana|missouri|maryland|wisconsin|colorado|minnesota|south carolina|alabama|louisiana|kentucky|oregon|oklahoma|connecticut|utah|iowa|nevada|arkansas|mississippi|kansas|new mexico|nebraska|west virginia|idaho|hawaii|new hampshire|maine|montana|rhode island|delaware|south dakota|north dakota|alaska|vermont|wyoming|ca|tx|fl|ny|pa|il|oh|ga|nc|mi|nj|va|wa|az|ma|tn|in|mo|md|wi|co|mn|sc|al|la|ky|or|ok|ct|ut|ia|nv|ar|ms|ks|nm|ne|wv|id|hi|nh|me|mt|ri|de|sd|nd|ak|vt|wy|united states|usa|america|canada|mexico|uk|united kingdom|england|scotland|wales|ireland|france|germany|italy|spain|portugal|netherlands|belgium|switzerland|austria|sweden|norway|denmark|finland|poland|czech republic|hungary|romania|bulgaria|greece|turkey|russia|ukraine|belarus|lithuania|latvia|estonia|croatia|serbia|bosnia|montenegro|macedonia|albania|slovenia|slovakia|moldova|georgia|armenia|azerbaijan|kazakhstan|uzbekistan|turkmenistan|kyrgyzstan|tajikistan|afghanistan|pakistan|india|bangladesh|sri lanka|nepal|bhutan|maldives|myanmar|thailand|laos|cambodia|vietnam|malaysia|singapore|brunei|indonesia|philippines|china|japan|south korea|north korea|mongolia|taiwan|hong kong|macau|australia|new zealand|fiji|papua new guinea|solomon islands|vanuatu|new caledonia|samoa|tonga|kiribati|tuvalu|nauru|palau|marshall islands|micronesia|guam|american samoa|northern mariana islands|cook islands|niue|tokelau|wallis and futuna|french polynesia|pitcairn islands|easter island|antarctica)$/i
 
     if (jobTitles.test(name.toLowerCase()) || locations.test(name.toLowerCase())) {
       return -100 // Heavy penalty for job titles and locations
@@ -1051,7 +1063,7 @@ export class AdvancedOCRService {
       if (this.isObviouslyNotName(line)) continue
 
       // Look for 2-3 capitalized words
-      const namePattern = /\b[A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){1,2}\b/
+      const namePattern = /\b[A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){1,2}\b/g
       const match = line.match(namePattern)
 
       if (match && !this.containsCommonNonNameWords(match[0])) {
@@ -1220,7 +1232,7 @@ export class AdvancedOCRService {
     console.log("[v0] Starting enhanced phone extraction")
 
     // Extract all sequences of digits, spaces, dashes, dots, and parentheses
-    const phonePattern = /[\d\s\-.$$$$]+/g
+    const phonePattern = /[\d\s\-.$()]+/g
     const matches = text.match(phonePattern) || []
 
     for (const match of matches) {
@@ -1243,25 +1255,25 @@ export class AdvancedOCRService {
 
   private extractLocationAdvanced(text: string): string {
     const locationPatterns = [
-      /([A-Z][a-z]+,\s*[A-Z]{2}(?:\s+\d{5})?)/g, // City, ST ZIP
+      /([A-Z][a-z]+(?:,\s*[A-Z]{2})?(?:\s+\d{5})?)/g, // City, ST ZIP or City, ST or City
       /([A-Z][a-z]+,\s*[A-Z][a-z]+)/g, // City, State/Country
       /([A-Z][a-z]+\s+[A-Z][a-z]+,\s*[A-Z]{2})/g, // City Name, ST
     ]
 
-    for (const pattern of locationPatterns) {
-      const matches = text.match(pattern)
-      if (matches) {
-        // Filter out obvious non-locations
-        for (const match of matches) {
-          const lowerMatch = match.toLowerCase()
-          if (this.LOCATION_INDICATORS.some((loc) => lowerMatch.includes(loc))) {
-            return match
-          }
-        }
-      }
-    }
+    // Combine patterns for better matching
+    const allPatterns = locationPatterns.flatMap((pattern) => {
+      const matches = text.match(pattern) || []
+      return matches.map((match) => match.trim())
+    })
 
-    return ""
+    // Filter out obvious non-locations and common words
+    const potentialLocations = allPatterns.filter((loc) =>
+      this.LOCATION_INDICATORS.some((indicator) => loc.toLowerCase().includes(indicator)),
+    )
+
+    // Deduplicate and return the first valid location found
+    const uniqueLocations = Array.from(new Set(potentialLocations))
+    return uniqueLocations.length > 0 ? uniqueLocations[0] : ""
   }
 
   private extractSkillsAdvanced(text: string): string[] {
@@ -1481,6 +1493,21 @@ export class AdvancedOCRService {
     const emailPattern = /([a-zA-Z0-9._%+-]+)@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
     const matches = text.match(emailPattern)
     return matches ? matches[0] : ""
+  }
+
+  private extractSkillsFallback(text: string): string[] {
+    // A very basic fallback to capture capitalized words that might be skills
+    const words = text.split(/\s+/).filter((word) => word.length > 1)
+    const potentialSkills = words.filter(
+      (word) =>
+        word.length > 2 &&
+        word[0] === word[0].toUpperCase() &&
+        word.toLowerCase() === word.replace(/[^a-z]/g, "").toLowerCase() && // Ensure it's mostly alphabetic
+        !this.isDefinitelyNotName(word) && // Not a name
+        !this.CITIES_COUNTRIES.has(word.toLowerCase()) && // Not a city/country
+        !this.JOB_TITLES.has(word.toLowerCase()), // Not a job title
+    )
+    return Array.from(new Set(potentialSkills)) // Return unique skills
   }
 }
 
