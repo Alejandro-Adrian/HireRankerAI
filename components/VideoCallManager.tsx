@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { revalidateVideoSessions } from "@/app/actions/video-sessions"
 import SuccessModal from "./SuccessModal"
 import SessionSummaryModal from "./SessionSummaryModal" // Import the new SessionSummaryModal component
+import { useRouter } from "next/navigation"
 
 interface VideoCallManagerProps {
   rankings: any[]
@@ -53,6 +54,8 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
   const [sessionTitle, setSessionTitle] = useState("")
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
+
+  const router = useRouter()
 
   useEffect(() => {
     fetchSessions()
@@ -228,8 +231,9 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
       await refreshSessions()
       window.open(meetingUrl, "_blank")
     } else {
-      // Just refresh the sessions list
+      // Redirect to video call page after sending invitations
       await refreshSessions()
+      router.push("/video-call")
     }
   }
 
