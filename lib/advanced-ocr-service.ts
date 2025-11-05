@@ -11,7 +11,7 @@ export interface ExtractedResumeData {
 }
 
 export class AdvancedOCRService {
-  private readonly API_KEY = "K87673133188957"
+  private readonly API_KEY = "K82009408488957"
   private readonly API_URL = "https://api.ocr.space/parse/image"
 
   private readonly COMMON_FIRST_NAMES = new Set([
