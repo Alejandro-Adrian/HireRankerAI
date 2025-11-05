@@ -7,30 +7,39 @@ export async function POST(request: NextRequest) {
   try {
     console.log("Starting application submission process")
 
-    // Initialize Supabase client
     let supabase
     try {
       supabase = createClient()
       console.log("Supabase client created successfully")
 
+      // Test database connection
       const { data: testQuery, error: testError } = await supabase.from("rankings").select("count").limit(1)
+
       if (testError) {
         console.error("Database connection test failed:", testError)
         return NextResponse.json(
-          { error: "Database connection failed", details: testError.message },
+          {
+            error: "Database connection failed",
+            details: testError.message,
+          },
           { status: 500 },
         )
       }
+
       console.log("Database connection verified")
-    } catch (clientError: any) {
+    } catch (clientError) {
       console.error("Failed to create Supabase client:", clientError)
       return NextResponse.json(
-        { error: "Database client initialization failed", details: clientError.message },
+        {
+          error: "Database client initialization failed",
+          details: clientError.message,
+        },
         { status: 500 },
       )
     }
 
     const formData = await request.formData()
+
     console.log("Processing application submission")
 
     const ranking_id = formData.get("ranking_id") as string
@@ -46,26 +55,23 @@ export async function POST(request: NextRequest) {
     if (hr_name) console.log("HR Name:", hr_name)
     if (company_name) console.log("Company Name:", company_name)
 
-    // --- Process uploaded files ---
+    // Process uploaded files
     const fileEntries = Array.from(formData.entries()).filter(
       ([key]) => key.startsWith("file_") && !key.includes("_category"),
     )
 
-    let resumeFile: { buffer: Buffer; name: string; type: string } | null = null
-    const allFiles: { buffer: Buffer; name: string; type: string; category: string; index: string }[] = []
+    let resumeFile: File | null = null
+    const allFiles: { file: File; category: string; index: string }[] = []
 
     for (const [key, file] of fileEntries) {
-      if (typeof file === "object" && typeof (file as any).arrayBuffer === "function") {
+      if (file && typeof file === "object" && "name" in file && "size" in file && "type" in file) {
         const index = key.split("_")[1]
         const category = (formData.get(`file_${index}_category`) as string) || "other"
-        const arrayBuffer = await (file as any).arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
-        const name = (file as any).name || "unknown"
-        const type = (file as any).type || "application/octet-stream"
 
-        allFiles.push({ buffer, name, type, category, index })
+        allFiles.push({ file: file as File, category, index })
+
         if (category === "resume") {
-          resumeFile = { buffer, name, type }
+          resumeFile = file as File
         }
       }
     }
@@ -77,21 +83,16 @@ export async function POST(request: NextRequest) {
 
     console.log(`Found ${allFiles.length} files, including resume: ${resumeFile.name}`)
 
-    // --- Resume parsing ---
     let resumeData
     try {
       console.log("Starting resume parsing...")
       console.log("Resume file details:", {
         name: resumeFile.name,
-        size: resumeFile.buffer.length,
+        size: resumeFile.size,
         type: resumeFile.type,
       })
 
-      resumeData = await simpleResumeParser.parseFromBuffer(
-        resumeFile.buffer,
-        resumeFile.name,
-        resumeFile.type,
-      )
+      resumeData = await simpleResumeParser.parseFromFile(resumeFile)
 
       console.log("Resume parsing completed successfully")
       console.log("Parsed resume data:", resumeData)
@@ -107,15 +108,29 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
       }
-    } catch (parseError: any) {
+    } catch (parseError) {
       console.error("Resume parsing failed:", parseError)
+
+      if (parseError.message.includes("PDF processing failed") && allFiles.length > 1) {
+        return NextResponse.json(
+          {
+            error: "PDF processing failed when mixed with other files",
+            details: "Please submit PDF files separately from images, or use only image files (JPG, PNG).",
+          },
+          { status: 400 },
+        )
+      }
+
       return NextResponse.json(
-        { error: "Failed to parse resume", details: parseError.message },
+        {
+          error: "Failed to parse resume",
+          details: parseError.message,
+        },
         { status: 500 },
       )
     }
 
-    // --- Validate ranking ---
+    // Verify ranking exists and is active
     console.log("Validating ranking...")
     const { data: ranking, error: rankingError } = await supabase
       .from("rankings")
@@ -128,10 +143,12 @@ export async function POST(request: NextRequest) {
       console.error("Ranking validation failed:", rankingError)
       return NextResponse.json({ error: "Invalid or inactive ranking" }, { status: 400 })
     }
+
     console.log("Validated ranking:", ranking.title)
 
-    // --- Duplicate detection ---
     console.log("Performing comprehensive duplicate detection...")
+
+    // Get all existing applications for this ranking
     const { data: existingApplications, error: fetchError } = await supabase
       .from("applications")
       .select("id, applicant_name, applicant_email, applicant_phone, applicant_city")
@@ -140,12 +157,15 @@ export async function POST(request: NextRequest) {
     if (fetchError) {
       console.error("Error fetching existing applications:", fetchError)
       return NextResponse.json(
-        { error: "Failed to check for duplicates", details: fetchError.message },
+        {
+          error: "Failed to check for duplicates",
+          details: fetchError.message,
+        },
         { status: 500 },
       )
     }
 
-    if (existingApplications?.length > 0) {
+    if (existingApplications && existingApplications.length > 0) {
       const duplicateResult = await duplicateDetectionService.checkDuplicate(
         {
           applicant_name: resumeData.applicant_name,
@@ -158,10 +178,12 @@ export async function POST(request: NextRequest) {
 
       if (duplicateResult.isDuplicate) {
         console.log("Duplicate detected with confidence:", duplicateResult.confidence)
+        console.log("Matched fields:", duplicateResult.matchedFields)
+
         return NextResponse.json(
           {
             error: "Duplicate application detected",
-            details: `A very similar application already exists for this position.`,
+            details: `A very similar application already exists for this position. Matched fields: ${duplicateResult.matchedFields.join(", ")}. Confidence: ${Math.round(duplicateResult.confidence * 100)}%`,
             confidence: duplicateResult.confidence,
             matchedFields: duplicateResult.matchedFields,
           },
@@ -172,7 +194,7 @@ export async function POST(request: NextRequest) {
 
     console.log("No duplicates found, proceeding with application creation")
 
-    // --- Create application record ---
+    // Creating application record...
     const applicationData = {
       ranking_id,
       applicant_name: resumeData.applicant_name,
@@ -191,6 +213,22 @@ export async function POST(request: NextRequest) {
       ocr_transcript: resumeData.raw_text || null,
     }
 
+    console.log("Application data to insert:", JSON.stringify(applicationData, null, 2))
+
+    const requiredFields = ["ranking_id", "applicant_name", "status", "submitted_at"]
+    const missingFields = requiredFields.filter((field) => !applicationData[field])
+
+    if (missingFields.length > 0) {
+      console.error("Missing required fields for application:", missingFields)
+      return NextResponse.json(
+        {
+          error: "Missing required application data",
+          details: `Missing fields: ${missingFields.join(", ")}`,
+        },
+        { status: 400 },
+      )
+    }
+
     const { data: application, error: applicationError } = await supabase
       .from("applications")
       .insert(applicationData)
@@ -199,39 +237,66 @@ export async function POST(request: NextRequest) {
 
     if (applicationError) {
       console.error("Error creating application:", applicationError)
+      console.error("Application error details:", JSON.stringify(applicationError, null, 2))
+
+      if (applicationError.code === "23505") {
+        return NextResponse.json(
+          {
+            error: "Duplicate application",
+            details: "An application with this information already exists",
+          },
+          { status: 409 },
+        )
+      } else if (applicationError.code === "23503") {
+        return NextResponse.json(
+          {
+            error: "Invalid ranking reference",
+            details: "The specified ranking does not exist",
+          },
+          { status: 400 },
+        )
+      }
+
       return NextResponse.json(
-        { error: "Failed to create application", details: applicationError.message },
+        {
+          error: "Failed to create application",
+          details: applicationError.message,
+          code: applicationError.code,
+        },
         { status: 500 },
       )
     }
 
     console.log("Created application:", application.id)
 
-    // --- Upload files to Supabase Storage ---
+    // Upload files to Supabase Storage
     const uploadedFiles: any[] = []
-    for (const { buffer, name, type, category } of allFiles) {
+
+    for (const { file, category } of allFiles) {
       try {
-        if (buffer.length > 10 * 1024 * 1024) {
-          console.warn(`File ${name} exceeds size limit, skipping`)
+        // Validate file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+          console.warn(`File ${file.name} exceeds size limit, skipping`)
           continue
         }
 
-        const fileName = `applications/${application.id}/${category}/${Date.now()}-${name}`
+        const fileName = `applications/${application.id}/${category}/${Date.now()}-${file.name}`
         console.log(`Uploading file: ${fileName}`)
 
+        // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("application-files")
-          .upload(fileName, buffer, {
+          .upload(fileName, file, {
             cacheControl: "3600",
             upsert: false,
-            contentType: type,
           })
 
         if (uploadError) {
-          console.error(`Error uploading file ${name}:`, uploadError)
+          console.error(`Error uploading file ${file.name}:`, uploadError)
           continue
         }
 
+        // Get public URL
         const {
           data: { publicUrl },
         } = supabase.storage.from("application-files").getPublicUrl(fileName)
@@ -240,9 +305,9 @@ export async function POST(request: NextRequest) {
           .from("application_files")
           .insert({
             application_id: application.id,
-            file_name: name,
-            file_type: type,
-            file_size: buffer.length,
+            file_name: file.name,
+            file_type: file.type,
+            file_size: file.size,
             file_url: publicUrl,
             file_category: category,
             uploaded_at: new Date().toISOString(),
@@ -254,50 +319,59 @@ export async function POST(request: NextRequest) {
           console.error("Error saving file info:", fileError)
         } else {
           uploadedFiles.push(fileRecord)
-          console.log(`Successfully uploaded: ${name}`)
+          console.log(`Successfully uploaded: ${file.name}`)
         }
-      } catch (error: any) {
-        console.error(`Error processing file ${name}:`, error)
+      } catch (error) {
+        console.error(`Error processing file ${file.name}:`, error)
       }
     }
 
     console.log(`Successfully uploaded ${uploadedFiles.length} files`)
 
-    // --- Scoring & notifications ---
     console.log("Starting automatic scoring process")
     try {
       const { directScoringService } = await import("@/lib/direct-scoring-service")
+
+      console.log("Attempting to score application:", application.id)
       const scoringResult = await directScoringService.scoreApplication(application.id)
 
       if (scoringResult) {
         console.log("Application scored successfully")
-        const { data: rankingInfo } = await supabase
-          .from("rankings")
-          .select("title, created_by")
-          .eq("id", ranking_id)
-          .single()
 
-        if (rankingInfo?.created_by) {
-          await supabase.from("notifications").insert({
-            user_id: rankingInfo.created_by,
-            type: "application_submitted",
-            title: "New Application Received",
-            message: `${resumeData.applicant_name} applied for ${rankingInfo.title}${
-              company_name ? ` at ${company_name}` : ""
-            }`,
-            data: {
-              application_id: application.id,
-              ranking_id: ranking_id,
-              applicant_name: resumeData.applicant_name,
-              company_name,
-              hr_name,
-            },
-          })
-          console.log("Notification created for new application")
+        try {
+          const { data: ranking } = await supabase
+            .from("rankings")
+            .select("title, created_by")
+            .eq("id", ranking_id)
+            .single()
+
+          if (ranking?.created_by) {
+            await supabase.from("notifications").insert({
+              user_id: ranking.created_by,
+              type: "application_submitted",
+              title: "New Application Received",
+              message: `${resumeData.applicant_name} has submitted an application for ${ranking.title}${company_name ? ` at ${company_name}` : ""}`,
+              data: {
+                application_id: application.id,
+                ranking_id: ranking_id,
+                applicant_name: resumeData.applicant_name,
+                company_name: company_name,
+                hr_name: hr_name,
+              },
+            })
+            console.log("Notification created for new application")
+          }
+        } catch (notificationError) {
+          console.error("Failed to create notification:", notificationError)
+          // Don't fail the entire application if notification fails
         }
+      } else {
+        console.error("Direct scoring failed: No result returned")
+        // Don't fail the entire application if scoring fails
       }
     } catch (scoringError) {
       console.error("Scoring service error:", scoringError)
+      // Continue without failing - scoring can be done manually later
     }
 
     return NextResponse.json(
@@ -313,18 +387,22 @@ export async function POST(request: NextRequest) {
         ...(company_name &&
           hr_name && {
             company_info: {
-              hr_name,
-              company_name,
+              hr_name: hr_name,
+              company_name: company_name,
             },
           }),
         uploaded_files: uploadedFiles.length,
       },
       { status: 201 },
     )
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in applications API:", error)
+    console.error("Error stack:", error.stack)
     return NextResponse.json(
-      { error: "Internal server error", details: error.message },
+      {
+        error: "Internal server error",
+        details: error.message,
+      },
       { status: 500 },
     )
   }
