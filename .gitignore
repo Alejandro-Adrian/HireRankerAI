@@ -34,15 +34,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-AI/GenerativeAI/app.py
-AI/GenerativeAI/LLM/added_tokens.json
-AI/GenerativeAI/LLM/config.json
-AI/GenerativeAI/LLM/generation_config.json
-AI/GenerativeAI/LLM/merges.txt
-AI/GenerativeAI/LLM/model-00001-of-00002.safetensors
-AI/GenerativeAI/LLM/model-00002-of-00002.safetensors
-AI/GenerativeAI/LLM/model.safetensors.index.json
-AI/GenerativeAI/LLM/special_tokens_map.json
-AI/GenerativeAI/LLM/tokenizer.json
-AI/GenerativeAI/LLM/tokenizer_config.json
-AI/GenerativeAI/LLM/vocab.json
+AI
