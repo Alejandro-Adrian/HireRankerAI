@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Copy, ExternalLink, CheckCircle, Loader2, AlertTriangle, Eye, EyeOff } from "lucide-react"
+import { ArrowLeft, Copy, ExternalLink, CheckCircle, Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import type { RankingData } from "@/app/rankings/create/page"
 
 interface ReviewStepProps {
@@ -108,56 +108,57 @@ export function ReviewStep({ data, onPrev, onRankingCreated }: ReviewStepProps) 
 
   if (isCreated) {
     return (
-      <div className="text-center space-y-6 animate-fade-in-up">
-        <div className="flex justify-center animate-bounce-gentle">
-          <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 rounded-full flex items-center justify-center shadow-xl backdrop-blur-sm">
-            <CheckCircle className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+      <div className="text-center space-y-6 animate-in fade-in">
+        <div className="flex justify-center animate-bounce">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-primary/10 rounded-full flex items-center justify-center shadow-lg">
+            <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
           </div>
         </div>
 
         <div>
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent mb-2">
+          <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-1">
             Ranking Created Successfully!
           </h3>
-          <p className="text-gray-600 dark:text-gray-300">
-            Your job ranking has been created and is ready to receive applications.
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Your job ranking is ready to receive applications.
           </p>
         </div>
 
-        <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-800/70 border-white/20 dark:border-gray-700/50 shadow-xl animate-slide-in-up">
-          <CardHeader>
-            <CardTitle className="text-lg bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+        <Card className="border border-border bg-card/80 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg text-primary">
               Application Link
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 value={applicationLink}
                 readOnly
-                className="font-mono text-sm backdrop-blur-sm bg-gray-50/80 dark:bg-gray-900/80 border-emerald-200/50 dark:border-emerald-700/50 text-gray-900 dark:text-gray-100"
+                className="font-mono text-xs sm:text-sm bg-muted/50 flex-1"
               />
               <Button
                 onClick={copyToClipboard}
                 size="sm"
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap"
               >
-                <Copy className="w-4 h-4" />
+                <Copy className="w-4 h-4 mr-2" />
+                Copy
               </Button>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => window.open(applicationLink, "_blank")}
                 variant="outline"
-                className="flex-1 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 transition-all duration-300 hover:scale-105"
+                className="flex-1 bg-card hover:bg-muted"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Preview Application Form
+                Preview Form
               </Button>
               <Button
                 onClick={() => (window.location.href = "/")}
-                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Back to Dashboard
               </Button>
@@ -171,65 +172,61 @@ export function ReviewStep({ data, onPrev, onRankingCreated }: ReviewStepProps) 
   return (
     <div className="space-y-6">
       {error && (
-        <Alert className="border-red-200/50 dark:border-red-800/50 backdrop-blur-sm bg-red-50/80 dark:bg-red-950/50 animate-shake">
-          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-          <AlertDescription className="text-red-800 dark:text-red-200">{error}</AlertDescription>
+        <Alert className="border-destructive/50 bg-destructive/10 animate-shake">
+          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <AlertDescription className="text-destructive ml-2">{error}</AlertDescription>
         </Alert>
       )}
 
       {/* Job Details Review */}
-      <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-800/70 border-white/20 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-500 animate-fade-in-up">
-        <CardHeader>
-          <CardTitle className="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+      <Card className="border border-border bg-card/80 shadow-sm hover:shadow-md transition-all duration-300">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg text-primary">
             Job Details
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <div>
-            <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Position</Label>
-            <p className="text-gray-900 dark:text-gray-100 capitalize">{data.position.replace("-", " ")}</p>
+            <Label className="text-xs font-medium text-muted-foreground">Position</Label>
+            <p className="text-foreground capitalize mt-1">{data.position.replace("-", " ")}</p>
           </div>
           <div>
-            <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</Label>
-            <p className="text-gray-900 dark:text-gray-100">{data.title}</p>
+            <Label className="text-xs font-medium text-muted-foreground">Title</Label>
+            <p className="text-foreground mt-1">{data.title}</p>
           </div>
           <div>
-            <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</Label>
-            <p className="text-gray-900 dark:text-gray-100">{data.description}</p>
+            <Label className="text-xs font-medium text-muted-foreground">Description</Label>
+            <p className="text-foreground mt-1 whitespace-pre-wrap">{data.description}</p>
           </div>
         </CardContent>
       </Card>
 
       {/* Criteria Review */}
-      <Card
-        className="backdrop-blur-md bg-white/70 dark:bg-gray-800/70 border-white/20 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-500 animate-fade-in-up"
-        style={{ animationDelay: "0.1s" }}
-      >
-        <CardHeader>
-          <CardTitle className="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+      <Card className="border border-border bg-card/80 shadow-sm hover:shadow-md transition-all duration-300">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg text-primary">
             Evaluation Criteria & Weights
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {data.selectedCriteria.map((criteriaId, index) => (
               <div
                 key={criteriaId}
-                className="flex items-center justify-between p-3 backdrop-blur-sm bg-gray-50/80 dark:bg-gray-700/80 rounded-lg border border-gray-200/50 dark:border-gray-600/50 animate-slide-in-left hover:scale-[1.02] transition-all duration-300"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-muted/30 rounded-lg border border-border/50 hover:scale-[1.01] transition-transform"
               >
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{criteriaLabels[criteriaId]}</span>
+                <div className="min-w-0">
+                  <span className="font-medium text-foreground text-sm">{criteriaLabels[criteriaId]}</span>
                   {criteriaId === "area_living" && data.areaLivingCity && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">({data.areaLivingCity})</span>
+                    <span className="text-xs text-muted-foreground ml-2">({data.areaLivingCity})</span>
                   )}
                   {criteriaId === "other" && data.otherKeyword && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">({data.otherKeyword})</span>
+                    <span className="text-xs text-muted-foreground ml-2">({data.otherKeyword})</span>
                   )}
                 </div>
                 <Badge
                   variant="secondary"
-                  className="text-sm bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 text-emerald-800 dark:text-emerald-200 border-emerald-200/50 dark:border-emerald-700/50"
+                  className="w-fit text-xs sm:text-sm bg-primary/10 text-primary border-primary/20"
                 >
                   {data.criteriaWeights[criteriaId]}% weight
                 </Badge>
@@ -238,15 +235,15 @@ export function ReviewStep({ data, onPrev, onRankingCreated }: ReviewStepProps) 
           </div>
 
           <div
-            className={`mt-4 p-3 rounded-lg border backdrop-blur-sm transition-all duration-300 ${
+            className={`p-3 rounded-lg border transition-all duration-300 ${
               isValidWeight
-                ? "bg-emerald-50/80 dark:bg-emerald-950/50 border-emerald-200/50 dark:border-emerald-800/50"
-                : "bg-red-50/80 dark:bg-red-950/50 border-red-200/50 dark:border-red-800/50"
+                ? "bg-primary/5 border-primary/20"
+                : "bg-destructive/5 border-destructive/20"
             }`}
           >
             <p
               className={`text-sm font-medium ${
-                isValidWeight ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"
+                isValidWeight ? "text-primary" : "text-destructive"
               }`}
             >
               <strong>Total Weight:</strong> {totalWeight}%{isValidWeight ? " ✓" : ` (Must equal 100%)`}
@@ -254,24 +251,24 @@ export function ReviewStep({ data, onPrev, onRankingCreated }: ReviewStepProps) 
           </div>
 
           {!isValidWeight && (
-            <Alert className="border-red-200/50 dark:border-red-800/50 backdrop-blur-sm bg-red-50/80 dark:bg-red-950/50 animate-shake">
-              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-              <AlertDescription className="text-red-800 dark:text-red-200">
+            <Alert className="border-destructive/50 bg-destructive/10">
+              <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+              <AlertDescription className="text-destructive ml-2">
                 {totalWeight > 100
-                  ? `Total weight is ${totalWeight}%. Please go back and reduce the weights to equal exactly 100%.`
-                  : `Total weight is ${totalWeight}%. Please go back and increase the weights to equal exactly 100%.`}
+                  ? `Total is ${totalWeight}%. Please reduce the weights to equal exactly 100%.`
+                  : `Total is ${totalWeight}%. Please increase the weights to equal exactly 100%.`}
               </AlertDescription>
             </Alert>
           )}
 
-          <div className="mt-4 p-4 backdrop-blur-sm bg-emerald-50/80 dark:bg-emerald-950/50 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg animate-fade-in-up">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-                  Show Evaluation Criteria to Applicants
+          <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="min-w-0">
+                <Label className="text-sm font-medium text-foreground">
+                  Show Criteria to Applicants
                 </Label>
-                <p className="text-xs text-emerald-700 dark:text-emerald-200 mt-1">
-                  When enabled, applicants will see what criteria they'll be evaluated on and their importance levels.
+                <p className="text-xs text-muted-foreground mt-1">
+                  They'll see evaluation criteria and importance levels
                 </p>
               </div>
               <Button
@@ -279,20 +276,20 @@ export function ReviewStep({ data, onPrev, onRankingCreated }: ReviewStepProps) 
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCriteriaToApplicants(!showCriteriaToApplicants)}
-                className={`flex items-center gap-2 transition-all duration-300 hover:scale-105 ${
+                className={`w-full sm:w-auto whitespace-nowrap transition-all duration-300 ${
                   showCriteriaToApplicants
-                    ? "bg-emerald-100/80 dark:bg-emerald-900/50 border-emerald-300/50 dark:border-emerald-700/50 text-emerald-700 dark:text-emerald-200"
-                    : "bg-gray-100/80 dark:bg-gray-800/80 border-gray-300/50 dark:border-gray-600/50 text-gray-600 dark:text-gray-300"
+                    ? "bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
+                    : "bg-muted hover:bg-muted/80"
                 }`}
               >
                 {showCriteriaToApplicants ? (
                   <>
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4 mr-2 flex-shrink-0" />
                     Visible
                   </>
                 ) : (
                   <>
-                    <EyeOff className="w-4 h-4" />
+                    <EyeOff className="w-4 h-4 mr-2 flex-shrink-0" />
                     Hidden
                   </>
                 )}
@@ -303,11 +300,11 @@ export function ReviewStep({ data, onPrev, onRankingCreated }: ReviewStepProps) 
       </Card>
 
       {/* Actions */}
-      <div className="flex justify-between animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 sm:gap-4 pt-4 animate-fade-in-up">
         <Button
           variant="outline"
           onClick={onPrev}
-          className="flex items-center gap-2 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg px-6 py-2.5"
+          className="flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:scale-105 bg-card hover:bg-muted"
         >
           <ArrowLeft className="w-4 h-4" />
           Previous
@@ -315,15 +312,17 @@ export function ReviewStep({ data, onPrev, onRankingCreated }: ReviewStepProps) 
         <Button
           onClick={handleCreateRanking}
           disabled={isCreating || !isValidWeight}
-          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 rounded-lg px-6 py-2.5 font-medium"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 rounded-lg px-6 py-2.5 font-medium"
         >
           {isCreating ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Creating Ranking...
+              Creating...
             </>
           ) : (
-            "Create Ranking & Generate Link"
+            <>
+              Create Ranking & Generate Link
+            </>
           )}
         </Button>
       </div>

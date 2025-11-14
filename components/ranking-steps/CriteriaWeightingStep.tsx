@@ -3,18 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  ArrowLeft,
-  ArrowRight,
-  User,
-  Award,
-  MapPin,
-  Briefcase,
-  GraduationCap,
-  FileText,
-  Star,
-  Plus,
-} from "lucide-react"
+import { ArrowLeft, ArrowRight, User, Award, MapPin, Briefcase, GraduationCap, FileText, Star, Plus } from 'lucide-react'
 import type { RankingData } from "@/app/rankings/create/page"
 
 interface CriteriaWeightingStepProps {
@@ -107,16 +96,15 @@ export function CriteriaWeightingStep({ data, onUpdate, onNext, onPrev }: Criter
   return (
     <div className="space-y-6">
       {/* Instructions */}
-      <div className="backdrop-blur-sm bg-emerald-50/80 dark:bg-emerald-900/30 p-4 rounded-xl border border-emerald-200/50 dark:border-emerald-800/50 animate-fade-in-up shadow-lg">
-        <h4 className="font-medium text-emerald-900 dark:text-emerald-100 mb-2">Set Criteria Importance</h4>
-        <p className="text-sm text-emerald-800 dark:text-emerald-200">
-          Drag the sliders to adjust how important each criteria is for evaluating applicants. Higher values mean the
-          criteria will have more impact on the final ranking.
+      <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 animate-in fade-in">
+        <h4 className="font-medium text-foreground mb-2">Set Criteria Importance</h4>
+        <p className="text-sm text-muted-foreground">
+          Adjust the importance of each criteria. Higher values have more impact on ranking.
         </p>
       </div>
 
       {/* Weight Controls */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-5">
         {data.selectedCriteria.map((criteriaId, index) => {
           const Icon = criteriaIcons[criteriaId]
           const weight = data.criteriaWeights[criteriaId] || 50
@@ -124,35 +112,35 @@ export function CriteriaWeightingStep({ data, onUpdate, onNext, onPrev }: Criter
           return (
             <Card
               key={criteriaId}
-              className="backdrop-blur-md bg-white/70 dark:bg-gray-800/70 border-white/20 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-[1.02] animate-slide-in-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="border border-border bg-card/80 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.01] animate-in fade-in"
+              style={{ animationDelay: `${index * 0.05}s` }}
             >
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 rounded-xl shadow-lg backdrop-blur-sm">
-                    <Icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                  <div className="p-2.5 bg-primary/10 rounded-lg flex-shrink-0">
+                    <Icon className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100">{criteriaLabels[criteriaId]}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground">{criteriaLabels[criteriaId]}</h3>
                     {criteriaId === "area_living" && data.areaLivingCity && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Preferred city: {data.areaLivingCity}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Preferred city: {data.areaLivingCity}</p>
                     )}
                     {criteriaId === "other" && data.otherKeyword && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Keyword: {data.otherKeyword}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Keyword: {data.otherKeyword}</p>
                     )}
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xl sm:text-2xl font-bold text-primary">
                       {weight}%
                     </div>
-                    <div className={`text-sm font-medium ${getImportanceColor(weight)} dark:brightness-125`}>
+                    <div className="text-xs font-medium text-muted-foreground">
                       {getImportanceLabel(weight)}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Less Important</span>
                     <span>More Important</span>
                   </div>
@@ -162,9 +150,9 @@ export function CriteriaWeightingStep({ data, onUpdate, onNext, onPrev }: Criter
                     max={100}
                     min={0}
                     step={5}
-                    className="w-full [&_[role=slider]]:bg-gradient-to-r [&_[role=slider]]:from-emerald-500 [&_[role=slider]]:to-teal-500 [&_[role=slider]]:border-0 [&_[role=slider]]:shadow-lg [&_[role=slider]]:shadow-emerald-500/30 [&_.bg-primary]:bg-gradient-to-r [&_.bg-primary]:from-emerald-500 [&_.bg-primary]:to-teal-500"
+                    className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
+                  <div className="flex justify-between text-xs text-muted-foreground">
                     <span>0%</span>
                     <span>25%</span>
                     <span>50%</span>
@@ -179,27 +167,27 @@ export function CriteriaWeightingStep({ data, onUpdate, onNext, onPrev }: Criter
       </div>
 
       {/* Weight Summary */}
-      <Card className="backdrop-blur-sm bg-gray-50/80 dark:bg-gray-800/80 border-white/20 dark:border-gray-700/50 shadow-lg animate-fade-in-up">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
+      <Card className="border border-border bg-muted/50">
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h4 className="font-medium text-gray-900 dark:text-gray-100">Weight Summary</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
+              <h4 className="font-semibold text-foreground">Weight Summary</h4>
+              <p className="text-sm text-muted-foreground mt-1">
                 Total: {totalWeight}% | Average: {averageWeight.toFixed(1)}%
               </p>
               {totalWeight !== 100 && (
-                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                   {totalWeight < 100 ? `${100 - totalWeight}% remaining` : `${totalWeight - 100}% over limit`}
                 </p>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
               {totalWeight !== 100 && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleRoundOff}
-                  className="text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/50 backdrop-blur-sm transition-all duration-300 hover:scale-105 bg-transparent"
+                  className="w-full sm:w-auto bg-card hover:bg-muted"
                 >
                   Round Off to 100%
                 </Button>
@@ -215,7 +203,7 @@ export function CriteriaWeightingStep({ data, onUpdate, onNext, onPrev }: Criter
                   })
                   onUpdate({ criteriaWeights: newWeights })
                 }}
-                className="border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50/80 dark:hover:bg-gray-800/80 backdrop-blur-sm transition-all duration-300 hover:scale-105"
+                className="w-full sm:w-auto bg-card hover:bg-muted"
               >
                 Reset to Equal Weights
               </Button>
@@ -225,18 +213,18 @@ export function CriteriaWeightingStep({ data, onUpdate, onNext, onPrev }: Criter
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between animate-fade-in-up">
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 sm:gap-4 pt-4 animate-fade-in-up">
         <Button
           variant="outline"
           onClick={onPrev}
-          className="flex items-center gap-2 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg px-6 py-2.5"
+          className="flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:scale-105 bg-card hover:bg-muted"
         >
           <ArrowLeft className="w-4 h-4" />
           Previous
         </Button>
         <Button
           onClick={onNext}
-          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/30 rounded-lg px-6 py-2.5 font-medium"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:shadow-lg rounded-lg px-6 py-2.5 font-medium"
         >
           Next: Review & Generate
           <ArrowRight className="w-4 h-4" />

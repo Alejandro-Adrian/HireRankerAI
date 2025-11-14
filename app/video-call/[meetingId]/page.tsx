@@ -136,10 +136,10 @@ export default function VideoCallPage() {
         }).catch((err) => console.error("Error triggering processing:", err))
       }
 
-      setTimeout(() => router.push("/video-call"), 500)
+      setTimeout(() => router.push("/dashboard"), 500)
     } catch (err) {
       console.error("Error ending call:", err)
-      router.push("/video-call")
+      router.push("/dashboard")
     }
   }
 
@@ -301,10 +301,10 @@ export default function VideoCallPage() {
             <h2 className="text-xl font-semibold text-foreground mb-4">Unable to join meeting</h2>
             <p className="text-destructive mb-6">{error}</p>
             <button
-              onClick={() => router.push("/video-call")}
+              onClick={() => router.push("/dashboard")}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
-              Back to Sessions
+              Back to Dashboard
             </button>
           </div>
         </div>

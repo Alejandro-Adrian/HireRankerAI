@@ -1,30 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import {
-  ArrowLeft,
-  Brain,
-  Loader2,
-  Users,
-  BarChart3,
-  Clock,
-  UserCheck,
-  TrendingUp,
-  Search,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Send,
-  FileText,
-  Eye,
-  UserX,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  RefreshCw,
-  X,
-} from "lucide-react"
+import { ArrowLeft, Brain, Loader2, Users, BarChart3, Clock, UserCheck, TrendingUp, Search, Mail, Phone, MapPin, Calendar, Send, FileText, Eye, UserX, CheckCircle, XCircle, AlertCircle, RefreshCw, X } from 'lucide-react'
 
 interface Application {
   id: string
@@ -880,89 +857,87 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
       </header>
 
       <div className="p-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Total Applications</p>
-                <p className="text-3xl font-bold text-foreground">{stats.total}</p>
+        {/* Stats Cards with improved responsive grid layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8">
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Total Applications</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{stats.total}</p>
               </div>
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Scored</p>
-                <p className="text-3xl font-bold text-foreground">{stats.reviewed}</p>
-              </div>
-              <div className="p-3 bg-emerald-100 dark:bg-emerald-950/50 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              <div className="flex-shrink-0 p-2 sm:p-3 bg-primary/10 rounded-lg">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Pending</p>
-                <p className="text-3xl font-bold text-foreground">{stats.pending}</p>
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Scored</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{stats.reviewed}</p>
               </div>
-              <div className="p-3 bg-amber-100 dark:bg-amber-950/50 rounded-lg">
-                <Clock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Selected</p>
-                <p className="text-3xl font-bold text-foreground">{stats.selected}</p>
-              </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-950/50 rounded-lg">
-                <UserCheck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="flex-shrink-0 p-2 sm:p-3 bg-emerald-100 dark:bg-emerald-950/50 rounded-lg">
+                <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Avg Score</p>
-                <p className="text-3xl font-bold text-foreground">{Math.round(stats.avgScore)}%</p>
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Pending</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{stats.pending}</p>
               </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-950/50 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <div className="flex-shrink-0 p-2 sm:p-3 bg-amber-100 dark:bg-amber-950/50 rounded-lg">
+                <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Selected</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{stats.selected}</p>
+              </div>
+              <div className="flex-shrink-0 p-2 sm:p-3 bg-blue-100 dark:bg-blue-950/50 rounded-lg">
+                <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Avg Score</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{Math.round(stats.avgScore)}%</p>
+              </div>
+              <div className="flex-shrink-0 p-2 sm:p-3 bg-purple-100 dark:bg-purple-950/50 rounded-lg">
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-card rounded-lg border border-border p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search by name, email, or city..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
+        <div className="bg-card rounded-lg border border-border p-4 sm:p-6 mb-6">
+          <div className="flex flex-col gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 sm:py-3 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm sm:text-base"
+              />
             </div>
-            <div className="flex gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="px-3 py-2 sm:py-3 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value="all">All Status</option>
                 <option value="scored">Scored</option>
@@ -974,7 +949,7 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="px-3 py-2 sm:py-3 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value="rank">Sort by Rank</option>
                 <option value="score-high">Score (High to Low)</option>
@@ -990,13 +965,13 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
           </div>
         </div>
 
-        {/* Applications Table */}
+        {/* Applications Table - Responsive */}
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50">
+            <table className="w-full text-sm sm:text-base">
+              <thead className="bg-muted/50 border-b border-border">
                 <tr>
-                  <th className="px-6 py-3 text-left">
+                  <th className="px-3 sm:px-6 py-3 text-left">
                     <input
                       type="checkbox"
                       checked={allEligibleSelected}
@@ -1010,22 +985,22 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
                       className="rounded border-border"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Rank
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Candidate
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Score
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
+                  <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Applied
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -1033,7 +1008,7 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
               <tbody className="divide-y divide-border">
                 {filteredApplications.map((application) => (
                   <tr key={application.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       {!application.selected_for_interview &&
                         application.total_score &&
                         application.total_score > 0 && (
@@ -1053,57 +1028,53 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
                           />
                         )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded-full border ${getRankBadgeColor(getDisplayRank(application))}`}
                       >
                         #{getDisplayRank(application)}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <div className="flex items-center">
-                        <div>
-                          <div className="text-sm font-medium text-foreground">{application.applicant_name}</div>
-                          <div className="text-sm text-slate-700 dark:text-slate-300">
-                            {application.applicant_email}
-                          </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">{application.applicant_name}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground truncate">{application.applicant_email}</div>
                           {application.applicant_city && (
-                            <div className="text-xs text-slate-700 dark:text-slate-300">
-                              {application.applicant_city}
-                            </div>
+                            <div className="text-xs text-muted-foreground">{application.applicant_city}</div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span
-                        className={`px-3 py-1 text-sm font-medium rounded-lg border ${getScoreColor(getDisplayScore(application))}`}
+                        className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium rounded-lg border ${getScoreColor(getDisplayScore(application))}`}
                       >
                         {getDisplayScore(application)}%
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col space-y-1">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="flex flex-col gap-1">
                         {application.selected_for_interview && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                             <UserCheck className="h-3 w-3 mr-1" />
                             Selected
                           </span>
                         )}
                         {application.status === "approved" && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Approved
                           </span>
                         )}
                         {application.status === "rejected" && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
                             <XCircle className="h-3 w-3 mr-1" />
                             Rejected
                           </span>
                         )}
-                        {!application.total_score || application.total_score <= 0 ? (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+                        {(!application.total_score || application.total_score <= 0) ? (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                             <Clock className="h-3 w-3 mr-1" />
                             Pending
                           </span>
@@ -1111,7 +1082,7 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
                           !application.selected_for_interview &&
                           application.status !== "approved" &&
                           application.status !== "rejected" && (
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400">
                               <AlertCircle className="h-3 w-3 mr-1" />
                               Scored
                             </span>
@@ -1119,17 +1090,16 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
+                    <td className="hidden sm:table-cell px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-muted-foreground">
                       {new Date(application.submitted_at).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        {/* Update the View button to show detailed scoring */}
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end sm:justify-start">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleShowScoring(application)}
-                          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-900/20 transition-all duration-200"
+                          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-900/20 text-xs sm:text-sm transition-all"
                         >
                           View
                         </Button>
@@ -1144,7 +1114,7 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
                                   setSelectedApplicationForRejection(application)
                                   setShowRejectionModal(true)
                                 }}
-                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs sm:text-sm font-medium"
                               >
                                 Reject
                               </button>
@@ -1153,7 +1123,7 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
                                   setSelectedApplicationForInterview(application)
                                   setShowApprovalModal(true)
                                 }}
-                                className="text-green-600 hover:text-green-800 text-sm font-medium"
+                                className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-xs sm:text-sm font-medium"
                               >
                                 Approve
                               </button>
@@ -1164,7 +1134,7 @@ export default function ResultsDashboard({ rankingId, onBack, onNotification }: 
                             setApplicationToDelete(application)
                             setShowDeleteModal(true)
                           }}
-                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs sm:text-sm font-medium"
                         >
                           Delete
                         </button>

@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Check, ArrowLeft, Save, RotateCcw } from "lucide-react"
+import { Check, ArrowLeft, Save, RotateCcw } from 'lucide-react'
 import { JobPositionStep } from "@/components/ranking-steps/JobPositionStep"
 import { CriteriaSelectionStep } from "@/components/ranking-steps/CriteriaSelectionStep"
 import { CriteriaWeightingStep } from "@/components/ranking-steps/CriteriaWeightingStep"
 import { ReviewStep } from "@/components/ranking-steps/ReviewStep"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export interface RankingData {
@@ -205,7 +205,7 @@ export default function CreateRankingPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-border border-t-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verifying authentication...</p>
+          <p className="text-foreground">Verifying authentication...</p>
         </div>
       </div>
     )
@@ -213,8 +213,8 @@ export default function CreateRankingPage() {
 
   if (authError) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
           <div className="text-destructive mb-4">
             <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -240,11 +240,11 @@ export default function CreateRankingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-4 sm:py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen bg-background py-4 sm:py-8 lg:py-12">
+      <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <Button
               variant="ghost"
               onClick={() => {
@@ -257,41 +257,41 @@ export default function CreateRankingPage() {
                   router.push("/")
                 }
               }}
-              className="flex items-center gap-2 text-foreground hover:bg-muted transition-colors"
+              className="flex items-center gap-2 text-foreground hover:bg-muted transition-colors w-full sm:w-auto justify-start sm:justify-center"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+              <span>Back to Dashboard</span>
             </Button>
 
             {hasRestoredProgress && (
               <Button
                 variant="outline"
                 onClick={resetProgress}
-                className="flex items-center gap-2 text-foreground hover:bg-muted transition-colors bg-transparent"
+                className="flex items-center gap-2 text-foreground hover:bg-muted transition-colors bg-transparent w-full sm:w-auto justify-start sm:justify-center"
               >
-                <RotateCcw className="w-4 h-4" />
-                Start Fresh
+                <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                <span>Start Fresh</span>
               </Button>
             )}
           </div>
 
           {showProgressAlert && (
-            <Alert className="mb-4 border-primary/50 bg-primary/10">
-              <Save className="h-4 w-4 text-primary" />
-              <AlertDescription className="text-foreground">
-                Your previous progress has been restored. You can continue where you left off or start fresh.
+            <Alert className="mb-4 border-primary/50 bg-primary/10 animate-in fade-in slide-in-from-top-2">
+              <Save className="h-4 w-4 text-primary flex-shrink-0" />
+              <AlertDescription className="text-foreground ml-2">
+                Your previous progress has been restored. Continue where you left off or start fresh.
               </AlertDescription>
             </Alert>
           )}
         </div>
 
-        {/* Progress Steps */}
-        <div className="mb-6 sm:mb-8 bg-card border border-border rounded-lg p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0">
+        {/* Progress Steps - Responsive */}
+        <div className="mb-6 sm:mb-8 bg-card border border-border rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
             {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
+              <div key={step.id} className="flex items-start sm:items-center flex-1">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
+                  className={`flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-full border-2 transition-colors ${
                     currentStep > step.id
                       ? "bg-primary text-primary-foreground border-primary"
                       : currentStep === step.id
@@ -300,24 +300,24 @@ export default function CreateRankingPage() {
                   }`}
                 >
                   {currentStep > step.id ? (
-                    <Check className="w-5 h-5" />
+                    <Check className="w-5 h-5 flex-shrink-0" />
                   ) : (
                     <span className="text-sm font-medium">{step.id}</span>
                   )}
                 </div>
-                <div className="ml-3 flex-1 sm:flex-none">
+                <div className="ml-3 flex-1 min-w-0">
                   <p
-                    className={`text-sm font-medium transition-colors ${
+                    className={`text-sm font-medium transition-colors truncate ${
                       currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
                     }`}
                   >
                     {step.title}
                   </p>
-                  <p className="text-xs text-muted-foreground hidden sm:block">{step.description}</p>
+                  <p className="text-xs text-muted-foreground hidden md:block mt-0.5">{step.description}</p>
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`hidden sm:flex flex-1 h-0.5 mx-4 transition-colors ${
+                    className={`hidden sm:flex flex-1 h-0.5 mx-2 transition-colors ${
                       currentStep > step.id ? "bg-primary" : "bg-border"
                     }`}
                   />
@@ -327,14 +327,15 @@ export default function CreateRankingPage() {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="bg-card border border-border rounded-lg">
-          <div className="p-6 border-b border-border">
-            <h2 className="text-xl font-bold text-foreground">
+        {/* Content Card - Responsive */}
+        <div className="bg-card border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+          <div className="p-4 sm:p-6 border-b border-border">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">
               Step {currentStep}: {steps[currentStep - 1].title}
             </h2>
+            <p className="text-sm text-muted-foreground mt-1">{steps[currentStep - 1].description}</p>
           </div>
-          <div className="p-6">{renderStep()}</div>
+          <div className="p-4 sm:p-6">{renderStep()}</div>
         </div>
       </div>
     </div>

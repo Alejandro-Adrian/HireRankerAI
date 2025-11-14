@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Save, CheckCircle, Loader2, AlertTriangle, Eye, EyeOff } from "lucide-react"
+import { ArrowLeft, Save, CheckCircle, Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import type { RankingData } from "@/app/rankings/create/page"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 
 interface EditReviewStepProps {
   data: RankingData
@@ -91,7 +91,7 @@ export function EditReviewStep({ data, onPrev, rankingId }: EditReviewStepProps)
           <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent mb-2">
             Changes Saved Successfully!
           </h3>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="text-black dark:text-gray-300">
             Your ranking has been updated with the new criteria and settings.
           </p>
         </div>
@@ -126,16 +126,16 @@ export function EditReviewStep({ data, onPrev, rankingId }: EditReviewStepProps)
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Position</Label>
-            <p className="text-gray-900 dark:text-gray-100 capitalize">{data.position.replace("-", " ")}</p>
+            <Label className="text-sm font-medium text-black dark:text-gray-400">Position</Label>
+            <p className="text-black dark:text-gray-100 capitalize">{data.position.replace("-", " ")}</p>
           </div>
           <div>
-            <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Title</Label>
-            <p className="text-gray-900 dark:text-gray-100">{data.title}</p>
+            <Label className="text-sm font-medium text-black dark:text-gray-400">Title</Label>
+            <p className="text-black dark:text-gray-100">{data.title}</p>
           </div>
           <div>
-            <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</Label>
-            <p className="text-gray-900 dark:text-gray-100">{data.description}</p>
+            <Label className="text-sm font-medium text-black dark:text-gray-400">Description</Label>
+            <p className="text-black dark:text-gray-100">{data.description}</p>
           </div>
         </CardContent>
       </Card>
@@ -159,12 +159,12 @@ export function EditReviewStep({ data, onPrev, rankingId }: EditReviewStepProps)
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{criteriaLabels[criteriaId]}</span>
+                  <span className="font-medium text-black dark:text-gray-100">{criteriaLabels[criteriaId]}</span>
                   {criteriaId === "area_living" && data.areaLivingCity && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">({data.areaLivingCity})</span>
+                    <span className="text-sm text-black dark:text-gray-400 ml-2">({data.areaLivingCity})</span>
                   )}
                   {criteriaId === "other" && data.otherKeyword && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">({data.otherKeyword})</span>
+                    <span className="text-sm text-black dark:text-gray-400 ml-2">({data.otherKeyword})</span>
                   )}
                 </div>
                 <Badge
@@ -186,7 +186,7 @@ export function EditReviewStep({ data, onPrev, rankingId }: EditReviewStepProps)
           >
             <p
               className={`text-sm font-medium ${
-                isValidWeight ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"
+                isValidWeight ? "text-black dark:text-emerald-200" : "text-black dark:text-red-200"
               }`}
             >
               <strong>Total Weight:</strong> {totalWeight}%{isValidWeight ? " ✓" : ` (Must equal 100%)`}
@@ -207,10 +207,10 @@ export function EditReviewStep({ data, onPrev, rankingId }: EditReviewStepProps)
           <div className="mt-4 p-4 backdrop-blur-sm bg-emerald-50/80 dark:bg-emerald-950/50 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg animate-fade-in-up">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                <Label className="text-sm font-medium text-black dark:text-emerald-100">
                   Show Evaluation Criteria to Applicants
                 </Label>
-                <p className="text-xs text-emerald-700 dark:text-emerald-200 mt-1">
+                <p className="text-xs text-black dark:text-emerald-200 mt-1">
                   When enabled, applicants will see what criteria they'll be evaluated on and their importance levels.
                 </p>
               </div>

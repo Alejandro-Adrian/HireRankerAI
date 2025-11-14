@@ -6,20 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  ArrowLeft,
-  ArrowRight,
-  User,
-  Award,
-  MapPin,
-  Briefcase,
-  GraduationCap,
-  FileText,
-  Star,
-  Plus,
-  CheckSquare,
-  Square,
-} from "lucide-react"
+import { ArrowLeft, ArrowRight, User, Award, MapPin, Briefcase, GraduationCap, FileText, Star, Plus, CheckSquare, Square } from 'lucide-react'
 import type { RankingData } from "@/app/rankings/create/page"
 
 interface CriteriaSelectionStepProps {
@@ -149,36 +136,34 @@ export function CriteriaSelectionStep({ data, onUpdate, onNext, onPrev }: Criter
 
   return (
     <div className="space-y-6">
-      {/* Criteria Selection */}
+      {/* Header */}
       <div className="animate-fade-in-up">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <Label className="text-base font-medium text-gray-700 dark:text-gray-200">Select Evaluation Criteria</Label>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              Choose the criteria you want to use for evaluating applicants
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <Label className="text-base font-medium text-foreground block">Select Evaluation Criteria</Label>
+            <p className="text-sm text-muted-foreground mt-1">Choose criteria for evaluating applicants</p>
           </div>
 
           <Button
             variant="outline"
             onClick={handleSelectAll}
-            className="flex items-center gap-2 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg px-4 py-2"
+            className="flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 w-full sm:w-auto bg-card hover:bg-muted"
           >
             {isAllSelected ? (
               <>
-                <Square className="w-4 h-4" />
+                <Square className="w-4 h-4 flex-shrink-0" />
                 Deselect All
               </>
             ) : (
               <>
-                <CheckSquare className="w-4 h-4" />
+                <CheckSquare className="w-4 h-4 flex-shrink-0" />
                 Select All
               </>
             )}
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-4">
           {availableCriteria.map((criteria, index) => {
             const Icon = criteria.icon
             const isSelected = data.selectedCriteria.includes(criteria.id)
@@ -186,46 +171,42 @@ export function CriteriaSelectionStep({ data, onUpdate, onNext, onPrev }: Criter
             return (
               <Card
                 key={criteria.id}
-                className={`cursor-pointer transition-all duration-500 hover:shadow-xl transform hover:scale-105 backdrop-blur-sm animate-slide-in-up ${
+                className={`cursor-pointer transition-all duration-500 hover:shadow-lg transform hover:scale-[1.02] animate-slide-in-up overflow-hidden ${
                   isSelected
-                    ? "ring-2 ring-emerald-500/50 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border-emerald-200/50 dark:border-emerald-700/50 shadow-lg shadow-emerald-500/20"
-                    : "hover:bg-white/80 dark:hover:bg-gray-800/80 bg-white/60 dark:bg-gray-800/60 border-white/20 dark:border-gray-700/50 hover:border-emerald-200/50 dark:hover:border-emerald-700/50"
+                    ? "ring-2 ring-primary/50 bg-primary/5 dark:bg-primary/10 border-primary/50 shadow-lg shadow-primary/20"
+                    : "hover:bg-muted/50 bg-card/80 border-border hover:border-primary/30 hover:shadow-md"
                 }`}
                 onClick={() => handleCriteriaToggle(criteria.id)}
-                style={{ animationDelay: `${index * 0.1}s` }}
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-4 sm:p-5">
                   <div className="flex items-start gap-3">
-                    <div className="mt-1">
+                    <div className="mt-1 flex-shrink-0">
                       <Checkbox
                         checked={isSelected}
                         onChange={() => {}}
-                        className={`transition-all duration-300 ${
-                          isSelected ? "border-emerald-500 bg-emerald-500" : ""
-                        }`}
+                        className="transition-all duration-300"
                       />
                     </div>
                     <div
-                      className={`p-2 rounded-lg transition-all duration-300 ${
+                      className={`p-2 rounded-lg transition-all duration-300 flex-shrink-0 ${
                         isSelected
-                          ? "bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/30"
-                          : "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600"
+                          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                          : "bg-muted text-foreground"
                       }`}
                     >
-                      <Icon
-                        className={`w-5 h-5 ${isSelected ? "text-white" : "text-emerald-600 dark:text-emerald-400"}`}
-                      />
+                      <Icon className="w-5 h-5" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 dark:text-gray-100">{criteria.title}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{criteria.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground">{criteria.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{criteria.description}</p>
 
-                      {/* Special input for Area Living */}
+                      {/* Special inputs */}
                       {criteria.id === "area_living" && criteria.hasInput && isSelected && (
-                        <div className="mt-3 animate-slide-in-down">
+                        <div className="mt-3 animate-in fade-in slide-in-from-top-2">
                           <Label
                             htmlFor="areaLivingCity"
-                            className="text-sm text-gray-700 dark:text-gray-300 font-medium"
+                            className="text-xs font-medium text-foreground"
                           >
                             Preferred City
                           </Label>
@@ -234,17 +215,17 @@ export function CriteriaSelectionStep({ data, onUpdate, onNext, onPrev }: Criter
                             value={data.areaLivingCity || ""}
                             onChange={(e) => onUpdate({ areaLivingCity: e.target.value })}
                             placeholder="Enter preferred city"
-                            className="mt-1 backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-emerald-200/50 dark:border-emerald-600/50 text-gray-900 dark:text-gray-100 transition-all duration-300 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 hover:border-emerald-400 rounded-lg shadow-sm"
+                            className="mt-1 text-sm transition-all duration-300"
                             onClick={(e) => e.stopPropagation()}
                           />
                         </div>
                       )}
 
                       {criteria.id === "other" && criteria.hasInput && isSelected && (
-                        <div className="mt-3 animate-slide-in-down">
+                        <div className="mt-3 animate-in fade-in slide-in-from-top-2">
                           <Label
                             htmlFor="otherKeyword"
-                            className="text-sm text-gray-700 dark:text-gray-300 font-medium"
+                            className="text-xs font-medium text-foreground"
                           >
                             Keyword to Match
                           </Label>
@@ -253,11 +234,11 @@ export function CriteriaSelectionStep({ data, onUpdate, onNext, onPrev }: Criter
                             value={data.otherKeyword || ""}
                             onChange={(e) => onUpdate({ otherKeyword: e.target.value })}
                             placeholder="Enter keyword to search in resumes"
-                            className="mt-1 backdrop-blur-sm bg-white/70 dark:bg-gray-900/70 border-emerald-200/50 dark:border-emerald-600/50 text-gray-900 dark:text-gray-100 transition-all duration-300 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 hover:border-emerald-400 rounded-lg shadow-sm"
+                            className="mt-1 text-sm transition-all duration-300"
                             onClick={(e) => e.stopPropagation()}
                           />
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            If this keyword is found in an applicant's resume, they will receive 50 bonus points
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Applicants with this keyword get 50 bonus points
                           </p>
                         </div>
                       )}
@@ -270,20 +251,14 @@ export function CriteriaSelectionStep({ data, onUpdate, onNext, onPrev }: Criter
         </div>
 
         {errors.criteria && (
-          <p className="text-sm text-red-600 dark:text-red-400 mt-2 animate-shake">{errors.criteria}</p>
-        )}
-        {errors.areaLivingCity && (
-          <p className="text-sm text-red-600 dark:text-red-400 mt-2 animate-shake">{errors.areaLivingCity}</p>
-        )}
-        {errors.otherKeyword && (
-          <p className="text-sm text-red-600 dark:text-red-400 mt-2 animate-shake">{errors.otherKeyword}</p>
+          <p className="text-sm text-destructive mt-3 animate-shake">{errors.criteria}</p>
         )}
       </div>
 
-      {/* Selected Criteria Summary */}
+      {/* Selected Summary */}
       {data.selectedCriteria.length > 0 && (
-        <div className="backdrop-blur-sm bg-emerald-50/80 dark:bg-emerald-900/30 p-4 rounded-xl border border-emerald-200/50 dark:border-emerald-800/50 animate-fade-in-up shadow-lg">
-          <h4 className="font-medium text-emerald-900 dark:text-emerald-100 mb-2">
+        <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 animate-in fade-in">
+          <h4 className="font-medium text-foreground mb-2">
             Selected Criteria ({data.selectedCriteria.length})
           </h4>
           <div className="flex flex-wrap gap-2">
@@ -292,12 +267,12 @@ export function CriteriaSelectionStep({ data, onUpdate, onNext, onPrev }: Criter
               return (
                 <span
                   key={criteriaId}
-                  className="bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 text-emerald-800 dark:text-emerald-200 px-3 py-1 rounded-full text-sm border border-emerald-200/50 dark:border-emerald-700/50 backdrop-blur-sm shadow-sm animate-fade-in hover:scale-105 transition-transform duration-200"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs sm:text-sm border border-primary/20 hover:scale-105 transition-transform"
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   {criteria?.title}
                   {criteriaId === "other" && data.otherKeyword && (
-                    <span className="ml-1 text-xs opacity-75">({data.otherKeyword})</span>
+                    <span className="ml-1 opacity-75">({data.otherKeyword})</span>
                   )}
                 </span>
               )
@@ -307,18 +282,18 @@ export function CriteriaSelectionStep({ data, onUpdate, onNext, onPrev }: Criter
       )}
 
       {/* Navigation */}
-      <div className="flex justify-between animate-fade-in-up" style={{ animationDelay: "0.5s" }}>
+      <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 sm:gap-4 pt-4 animate-fade-in-up">
         <Button
           variant="outline"
           onClick={onPrev}
-          className="flex items-center gap-2 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg px-6 py-2.5"
+          className="flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:scale-105 bg-card hover:bg-muted"
         >
           <ArrowLeft className="w-4 h-4" />
           Previous
         </Button>
         <Button
           onClick={handleNext}
-          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/30 rounded-lg px-6 py-2.5 font-medium"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:shadow-lg rounded-lg px-6 py-2.5 font-medium"
         >
           Next: Set Weights
           <ArrowRight className="w-4 h-4" />

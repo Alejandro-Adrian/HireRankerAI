@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Loader2, Eye } from "lucide-react"
+import { useRouter } from 'next/navigation'
+import { Loader2, Eye } from 'lucide-react'
 import VideoCallManager from "@/components/VideoCallManager"
 
 interface Session {
@@ -108,10 +108,10 @@ export default function VideoCallPage() {
                     <span
                       className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
                         session.status === "completed"
-                          ? "bg-gray-100 text-gray-800"
+                          ? "bg-gray-100 text-black dark:text-gray-800"
                           : session.status === "active"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-blue-100 text-blue-800"
+                            ? "bg-emerald-100 text-black dark:text-emerald-800"
+                            : "bg-blue-100 text-black dark:text-blue-800"
                       }`}
                     >
                       {session.status}
@@ -119,7 +119,7 @@ export default function VideoCallPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                <div className="space-y-2 text-sm text-black dark:text-muted-foreground mb-4">
                   <p>
                     <strong>Created:</strong> {new Date(session.created_at).toLocaleDateString()}
                   </p>

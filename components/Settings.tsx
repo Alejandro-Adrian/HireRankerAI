@@ -8,22 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  User,
-  Shield,
-  Palette,
-  AlertTriangle,
-  Mail,
-  Lock,
-  Trash2,
-  Building,
-  Sun,
-  Moon,
-  Monitor,
-} from "lucide-react"
+import { ArrowLeft, Eye, EyeOff, User, Shield, Palette, AlertTriangle, Mail, Lock, Trash2, Building, Sun, Moon, Monitor } from 'lucide-react'
 import { createClient } from "@/lib/supabase/client"
 
 // Define the SettingsProps interface
@@ -69,6 +54,8 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
       try {
         const supabase = createClient()
 
+        await new Promise(resolve => setTimeout(resolve, 100))
+
         // Get current user from Supabase
         const {
           data: { user },
@@ -76,7 +63,13 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
         } = await supabase.auth.getUser()
 
         if (userError || !user) {
-          console.error("No authenticated user found:", userError)
+          console.warn("No authenticated user found in session, using provided userEmail")
+          setProfile({
+            name: "",
+            email: userEmail,
+            bio: "",
+            company_name: "",
+          })
           return
         }
 
@@ -101,10 +94,16 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
         }
       } catch (error) {
         console.error("Failed to load profile:", error)
+        setProfile({
+          name: "",
+          email: userEmail,
+          bio: "",
+          company_name: "",
+        })
       }
     }
     loadProfile()
-  }, [])
+  }, [userEmail])
 
   const updateProfile = async () => {
     setLoading(true)

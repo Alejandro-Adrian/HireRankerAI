@@ -4,7 +4,7 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Home, Zap, Database, Brain, FileText, Users } from "lucide-react"
+import { Home, Zap, Database, Brain, FileText, Users } from 'lucide-react'
 
 export default function SystemFlowchart() {
   const [animationStep, setAnimationStep] = useState(0)
@@ -42,7 +42,7 @@ export default function SystemFlowchart() {
                     <CardTitle className="text-2xl sm:text-3xl font-bold gradient-text font-work-sans">
                       HR Dashboard System Flow
                     </CardTitle>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 font-open-sans">
+                    <p className="text-sm text-black dark:text-slate-400 font-open-sans">
                       Interactive system architecture and user journey visualization
                     </p>
                   </div>
@@ -98,8 +98,8 @@ export default function SystemFlowchart() {
                     />
                   </svg>
                   <div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white font-work-sans">Start/End</span>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">Entry & exit points</p>
+                    <span className="text-sm font-bold text-black dark:text-white font-work-sans">Start/End</span>
+                    <p className="text-xs text-black dark:text-slate-400 font-open-sans">Entry & exit points</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 animate-slide-in-left" style={{ animationDelay: "0.3s" }}>
@@ -107,8 +107,8 @@ export default function SystemFlowchart() {
                     <rect x="4" y="8" width="52" height="24" rx="4" fill="#3b82f6" stroke="#1e40af" strokeWidth="2" />
                   </svg>
                   <div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white font-work-sans">Process</span>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">System operations</p>
+                    <span className="text-sm font-bold text-black dark:text-white font-work-sans">Process</span>
+                    <p className="text-xs text-black dark:text-slate-400 font-open-sans">System operations</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 animate-slide-in-left" style={{ animationDelay: "0.4s" }}>
@@ -116,8 +116,8 @@ export default function SystemFlowchart() {
                     <polygon points="30,4 54,20 30,36 6,20" fill="#f59e0b" stroke="#d97706" strokeWidth="2" />
                   </svg>
                   <div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white font-work-sans">Decision</span>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">Logic branches</p>
+                    <span className="text-sm font-bold text-black dark:text-white font-work-sans">Decision</span>
+                    <p className="text-xs text-black dark:text-slate-400 font-open-sans">Logic branches</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 animate-slide-in-left" style={{ animationDelay: "0.5s" }}>
@@ -125,10 +125,10 @@ export default function SystemFlowchart() {
                     <polygon points="10,8 50,8 54,32 6,32" fill="#8b5cf6" stroke="#7c3aed" strokeWidth="2" />
                   </svg>
                   <div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white font-work-sans">
+                    <span className="text-sm font-bold text-black dark:text-white font-work-sans">
                       Input/Output
                     </span>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">Data flow</p>
+                    <p className="text-xs text-black dark:text-slate-400 font-open-sans">Data flow</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 animate-slide-in-left" style={{ animationDelay: "0.6s" }}>
@@ -136,8 +136,8 @@ export default function SystemFlowchart() {
                     <rect x="15" y="8" width="30" height="24" rx="15" fill="#ef4444" stroke="#dc2626" strokeWidth="2" />
                   </svg>
                   <div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white font-work-sans">Database</span>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">Data storage</p>
+                    <span className="text-sm font-bold text-black dark:text-white font-work-sans">Database</span>
+                    <p className="text-xs text-black dark:text-slate-400 font-open-sans">Data storage</p>
                   </div>
                 </div>
               </div>
@@ -711,8 +711,8 @@ export default function SystemFlowchart() {
                     <Home className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white font-work-sans">Dashboard</h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">Main Interface</p>
+                    <h3 className="font-bold text-black dark:text-white font-work-sans">Dashboard</h3>
+                    <p className="text-xs text-black dark:text-slate-400 font-open-sans">Main Interface</p>
                   </div>
                 </div>
               </div>
@@ -724,8 +724,8 @@ export default function SystemFlowchart() {
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white font-work-sans">Rankings</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">Job Postings</p>
+                  <h3 className="font-bold text-black dark:text-white font-work-sans">Rankings</h3>
+                  <p className="text-xs text-black dark:text-slate-400 font-open-sans">Job Postings</p>
                 </div>
               </div>
             </div>
@@ -736,8 +736,8 @@ export default function SystemFlowchart() {
                   <Brain className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white font-work-sans">AI Engine</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">Smart Scoring</p>
+                  <h3 className="font-bold text-black dark:text-white font-work-sans">AI Engine</h3>
+                  <p className="text-xs text-black dark:text-slate-400 font-open-sans">Smart Scoring</p>
                 </div>
               </div>
             </div>
@@ -748,8 +748,8 @@ export default function SystemFlowchart() {
                   <Database className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white font-work-sans">Database</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 font-open-sans">Supabase</p>
+                  <h3 className="font-bold text-black dark:text-white font-work-sans">Database</h3>
+                  <p className="text-xs text-black dark:text-slate-400 font-open-sans">Supabase</p>
                 </div>
               </div>
             </div>

@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Check, ArrowLeft, Save, Loader2, AlertTriangle } from "lucide-react"
+import { Check, ArrowLeft, Save, Loader2, AlertTriangle } from 'lucide-react'
 import { JobPositionStep } from "@/components/ranking-steps/JobPositionStep"
 import { CriteriaSelectionStep } from "@/components/ranking-steps/CriteriaSelectionStep"
 import { CriteriaWeightingStep } from "@/components/ranking-steps/CriteriaWeightingStep"
 import { EditReviewStep } from "@/components/ranking-steps/EditReviewStep"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createClient } from "@/lib/supabase/client"
 
@@ -138,7 +138,7 @@ export default function EditRankingPage({ params }: { params: { id: string } }) 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-teal-50 dark:from-slate-900 dark:via-emerald-950/30 dark:to-teal-950 py-8 flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400 mx-auto" />
-          <p className="text-gray-600 dark:text-gray-300">Loading ranking data...</p>
+          <p className="text-black dark:text-gray-300">Loading ranking data...</p>
         </div>
       </div>
     )
@@ -150,13 +150,13 @@ export default function EditRankingPage({ params }: { params: { id: string } }) 
         <div className="max-w-md mx-auto px-4">
           <Alert className="border-red-200/50 dark:border-red-800/50 backdrop-blur-sm bg-red-50/80 dark:bg-red-950/50">
             <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-            <AlertDescription className="text-red-800 dark:text-red-200">{error}</AlertDescription>
+            <AlertDescription className="text-black dark:text-red-200">{error}</AlertDescription>
           </Alert>
           <div className="mt-4 text-center">
             <Button
               onClick={() => router.push("/")}
               variant="outline"
-              className="backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+              className="backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-emerald-200/50 dark:border-emerald-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300"
             >
               Back to Dashboard
             </Button>
@@ -182,7 +182,7 @@ export default function EditRankingPage({ params }: { params: { id: string } }) 
                   router.push("/")
                 }
               }}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all duration-300 hover:scale-105 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border border-white/20 dark:border-gray-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/30 rounded-lg px-4 py-2"
+              className="flex items-center gap-2 text-black dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all duration-300 hover:scale-105 backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border border-white/20 dark:border-gray-700/50 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/30 rounded-lg px-4 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard
@@ -202,7 +202,7 @@ export default function EditRankingPage({ params }: { params: { id: string } }) 
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
               Edit Ranking: {rankingData.title}
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
+            <p className="text-black dark:text-gray-300 text-sm mt-1">
               Make changes to your job ranking criteria and settings
             </p>
           </div>
@@ -239,7 +239,7 @@ export default function EditRankingPage({ params }: { params: { id: string } }) 
                   >
                     {step.title}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">{step.description}</p>
+                  <p className="text-xs text-black dark:text-gray-400 hidden sm:block">{step.description}</p>
                 </div>
                 {index < steps.length - 1 && (
                   <div

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import Dashboard from "@/components/Dashboard"
 
 export default function DashboardPage() {
@@ -32,7 +32,7 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-slate-900 dark:via-slate-800 dark:to-emerald-950 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-emerald-200 dark:border-emerald-800 border-t-emerald-500 rounded-full animate-spin mx-auto"></div>
-          <p className="text-slate-500 dark:text-slate-400 mt-4 font-open-sans">Loading dashboard...</p>
+          <p className="text-black dark:text-slate-400 mt-4 font-open-sans">Loading dashboard...</p>
         </div>
       </div>
     )
