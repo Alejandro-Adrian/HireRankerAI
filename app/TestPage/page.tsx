@@ -9,7 +9,6 @@ export default function Home() {
     <main>
       <AIOverlayWrapper />
       <AudioCapture />
-      <h1>Your page content</h1>
     </main>
   );
 }

@@ -57,39 +57,86 @@
 [2025-11-04T22:53:38.283560+00:00] DISCONNECT sid=xwaiV2TTzqtB21QYAAAF removed from DB
 [2025-11-04T23:06:05.233978+00:00] AUTH success sid=nIYE8tKFWnyzR8e2AAAH user=dev_6ds5k6 client_public_key_present=False session_key_pending=False
 [2025-11-04T23:06:32.736521+00:00] DISCONNECT sid=nIYE8tKFWnyzR8e2AAAH removed from DB
-[2025-11-05T07:02:01.054022+00:00] AUTH failed sid=mO4uTpztF5Lyzb-6AAAB token_present=True
-[2025-11-05T07:02:01.087021+00:00] AUTH success sid=mO4uTpztF5Lyzb-6AAAB user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:07:38.036306+00:00] AUTH success sid=0UCYnvOH4SPa_wI0AAAD user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:10:24.266620+00:00] AUTH success sid=-g4KLug39YBhFiyBAAAF user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:18:09.218191+00:00] AUTH success sid=YwC1B1TkrxpOZhOgAAAH user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:18:37.549689+00:00] DISCONNECT sid=-g4KLug39YBhFiyBAAAF removed from DB
-[2025-11-05T07:18:38.088047+00:00] AUTH success sid=iNTEwWFQt1DBJ7OHAAAJ user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:20:23.389537+00:00] DISCONNECT sid=0UCYnvOH4SPa_wI0AAAD removed from DB
-[2025-11-05T07:20:23.399878+00:00] DISCONNECT sid=iNTEwWFQt1DBJ7OHAAAJ removed from DB
-[2025-11-05T07:20:23.408529+00:00] DISCONNECT sid=YwC1B1TkrxpOZhOgAAAH removed from DB
-[2025-11-05T07:20:23.416533+00:00] DISCONNECT sid=mO4uTpztF5Lyzb-6AAAB removed from DB
-[2025-11-05T07:20:23.438843+00:00] AUTH success sid=koRgLXP3QFBa5H3aAAAO user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:20:23.447520+00:00] AUTH success sid=tK7GB5gIWH6SRwReAAAP user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:20:23.456499+00:00] AUTH success sid=ipmgWvhNqXvBWhPPAAAQ user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:20:23.465498+00:00] AUTH success sid=4rKLxlPMpslJNhghAAAR user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:21:58.941048+00:00] DISCONNECT sid=ipmgWvhNqXvBWhPPAAAQ removed from DB
-[2025-11-05T07:21:58.949062+00:00] DISCONNECT sid=koRgLXP3QFBa5H3aAAAO removed from DB
-[2025-11-05T07:21:58.957055+00:00] DISCONNECT sid=4rKLxlPMpslJNhghAAAR removed from DB
-[2025-11-05T07:21:58.964118+00:00] DISCONNECT sid=tK7GB5gIWH6SRwReAAAP removed from DB
-[2025-11-05T07:21:59.260184+00:00] AUTH success sid=d_7KDQyLc24BQ6ezAAAT user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:21:59.431819+00:00] AUTH success sid=C_y6HhCrWQACNTvQAAAV user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:21:59.507153+00:00] AUTH success sid=jCcqMaFhSz3qYD-2AAAX user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:21:59.973951+00:00] AUTH success sid=J38Vx9XBS5r1xu_YAAAZ user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:27:57.680026+00:00] AUTH success sid=xPyBg8-kbmoY5bfUAAAB user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:32:15.167761+00:00] DISCONNECT sid=xPyBg8-kbmoY5bfUAAAB removed from DB
-[2025-11-05T07:41:11.905140+00:00] AUTH success sid=V3rqTMkevX7XQn4YAAAD user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:43:19.647386+00:00] AUTH success sid=UbDU5yaWRKXkNeDhAAAF user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:44:20.307805+00:00] AUTH success sid=eqttL0jiauCEIb_IAAAH user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T07:45:54.064356+00:00] AUTH success sid=rrLylVR6hGWwwb_CAAAJ user=dev_ruedmx client_public_key_present=False session_key_pending=False
-[2025-11-05T08:05:34.732121+00:00] DISCONNECT sid=V3rqTMkevX7XQn4YAAAD removed from DB
-[2025-11-05T08:05:34.744128+00:00] DISCONNECT sid=UbDU5yaWRKXkNeDhAAAF removed from DB
-[2025-11-05T08:05:34.757158+00:00] DISCONNECT sid=eqttL0jiauCEIb_IAAAH removed from DB
-[2025-11-05T08:05:34.769124+00:00] DISCONNECT sid=rrLylVR6hGWwwb_CAAAJ removed from DB
-[2025-11-05T08:21:39.545575+00:00] AUTH failed sid=FyS1bcn9SHam5txKAAAB token_present=True
-[2025-11-05T08:21:39.800536+00:00] AUTH success sid=FyS1bcn9SHam5txKAAAB user=dev_s8c137 client_public_key_present=False session_key_pending=False
-[2025-11-05T08:22:54.307926+00:00] AUTH success sid=wmRyIKDRMhTbPMfgAAAB user=dev_s8c137 client_public_key_present=False session_key_pending=False
+[2025-11-05T13:50:16.577597+00:00] AUTH failed sid=O4xGE_SOeq4TxYzJAAAB token_present=True
+[2025-11-05T13:50:25.983692+00:00] AUTH success sid=O4xGE_SOeq4TxYzJAAAB user=dev_fxgcgn client_public_key_present=False session_key_pending=False
+[2025-11-05T13:51:05.099173+00:00] AUTH success sid=ztGSIlt7eKWBMP_YAAAD user=dev_fxgcgn client_public_key_present=False session_key_pending=False
+[2025-11-07T11:46:55.887671+00:00] AUTH failed sid=a_clmQkrl8WIdMYxAAAB token_present=True
+[2025-11-07T11:47:25.292617+00:00] AUTH failed sid=hQrnsrw0EVm23qOMAAAB token_present=True
+[2025-11-07T11:47:25.567062+00:00] AUTH success sid=hQrnsrw0EVm23qOMAAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T11:50:58.010167+00:00] DISCONNECT sid=hQrnsrw0EVm23qOMAAAB removed from DB
+[2025-11-07T12:27:19.888393+00:00] AUTH success sid=9AqetjKLuVDeG9g-AAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:28:00.242534+00:00] AUTH success sid=xVgwaJykZDYTwMdOAAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:28:15.276706+00:00] AUTH success sid=3oXin3JJgU_mE708AAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:28:34.702090+00:00] AUTH success sid=CQVGDUlMRdQ1b-msAAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:29:01.698464+00:00] AUTH success sid=Dtz9MLjh2w5mlJV6AAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:29:14.698740+00:00] AUTH success sid=Z0ESlVkohxLA-6d2AAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:29:24.971956+00:00] AUTH success sid=ey8a7diLGG4GPb65AAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:29:34.696164+00:00] AUTH success sid=eXTjwYoo72KXw-2nAAAC user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:29:34.815623+00:00] AUTH success sid=v8_LFrOTXt2y8Db-AAAD user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:36:37.191557+00:00] AUTH success sid=1dt_FARQTnXH9SwYAAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:36:53.864460+00:00] AUDIO received sid=Qmi1-qjRohjzQr4_AAAD path=uploads\Qmi1-qjRohjzQr4_AAAD\audio\recording_20251107203653.webm
+[2025-11-07T12:37:14.956428+00:00] AUTH success sid=KCbFlxHmeEYYXL1iAAAF user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:39:49.948210+00:00] AUTH success sid=KVWxZSr1hzvBbRvkAAAD user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:39:49.985773+00:00] AUTH success sid=aODUs-xwWPRJ0l5OAAAE user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:41:34.530938+00:00] AUTH success sid=ndjjXaCqBgwRZWXiAAAB user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:41:34.761340+00:00] AUTH success sid=3RHoLvPnZw-XNlI2AAAD user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:41:36.591581+00:00] AUTH success sid=w4cVpaCll-D44k-AAAAH user=dev_45wyoo client_public_key_present=False session_key_pending=False
+[2025-11-07T12:41:44.732470+00:00] AUDIO received sid=Qmi1-qjRohjzQr4_AAAD path=uploads\Qmi1-qjRohjzQr4_AAAD\audio\recording_20251107204144.webm
+[2025-11-07T12:43:28.004358+00:00] AUDIO received sid=Qmi1-qjRohjzQr4_AAAD path=uploads\Qmi1-qjRohjzQr4_AAAD\audio\recording_20251107204327.webm
+[2025-11-07T12:49:31.249289+00:00] AUTH failed sid=vNsRejKFv-f_V5DfAAAD token_present=True
+[2025-11-07T12:49:31.455813+00:00] AUTH success sid=vNsRejKFv-f_V5DfAAAD user=dev_3nkbu2 client_public_key_present=False session_key_pending=False
+[2025-11-07T12:49:33.182513+00:00] AUTH failed sid=PlmATAe7QFgnUuIUAAAF token_present=True
+[2025-11-07T12:49:33.396365+00:00] AUTH success sid=PlmATAe7QFgnUuIUAAAF user=dev_6b3jnc client_public_key_present=False session_key_pending=False
+[2025-11-07T12:49:34.162951+00:00] AUTH failed sid=1dD3q4Wl3WeWvYZOAAAH token_present=True
+[2025-11-07T12:49:34.236655+00:00] AUTH success sid=1dD3q4Wl3WeWvYZOAAAH user=dev_2sz9fq client_public_key_present=False session_key_pending=False
+[2025-11-07T12:49:53.003979+00:00] AUTH success sid=92IQ96biPkJApAH6AAAB user=dev_2sz9fq client_public_key_present=False session_key_pending=False
+[2025-11-07T12:49:55.466159+00:00] AUTH success sid=3sH8Xwr0SVbviqHKAAAD user=dev_3nkbu2 client_public_key_present=False session_key_pending=False
+[2025-11-07T12:49:57.046609+00:00] AUTH success sid=Myb8FpfxckD1n9ykAAAH user=dev_6b3jnc client_public_key_present=False session_key_pending=False
+[2025-11-07T12:50:11.826334+00:00] AUDIO received sid=Qmi1-qjRohjzQr4_AAAD path=uploads\Qmi1-qjRohjzQr4_AAAD\audio\recording_20251107205009.webm
+[2025-11-07T14:17:12.998275+00:00] AUDIO received sid=9Y1oB_Bpi_n1Ka-6AAAB path=uploads\9Y1oB_Bpi_n1Ka-6AAAB\audio\recording_20251107221712.webm
+[2025-11-07T14:17:14.189135+00:00] AUDIO converted sid=9Y1oB_Bpi_n1Ka-6AAAB webm=uploads\9Y1oB_Bpi_n1Ka-6AAAB\audio\recording_20251107221712.webm wav=uploads\9Y1oB_Bpi_n1Ka-6AAAB\audio\recording_20251107221712.wav
+[2025-11-07T14:17:38.602945+00:00] AUDIO received sid=9Y1oB_Bpi_n1Ka-6AAAB path=uploads\9Y1oB_Bpi_n1Ka-6AAAB\audio\recording_20251107221738.webm
+[2025-11-07T14:17:39.725063+00:00] AUDIO converted sid=9Y1oB_Bpi_n1Ka-6AAAB webm=uploads\9Y1oB_Bpi_n1Ka-6AAAB\audio\recording_20251107221738.webm wav=uploads\9Y1oB_Bpi_n1Ka-6AAAB\audio\recording_20251107221738.wav
+[2025-11-07T15:09:18.009032+00:00] AUDIO received sid=GKUib1seEahLkRFDAAAB temp_path=uploads\GKUib1seEahLkRFDAAAB\audio\recording_20251107230917.webm
+[2025-11-07T15:09:19.593901+00:00] AUDIO converted sid=GKUib1seEahLkRFDAAAB webm=uploads\GKUib1seEahLkRFDAAAB\audio\recording_20251107230917.webm wav=uploads\GKUib1seEahLkRFDAAAB\audio\recording_20251107230917.wav
+[2025-11-07T15:17:13.100874+00:00] DISCONNECT sid=Wxdb1c3ZuYuD0WoXAAAB removed from DB
+[2025-11-07T15:17:31.923632+00:00] AUDIO received sid=SOTUR-qjdST165AgAAAD temp_path=uploads\SOTUR-qjdST165AgAAAD\audio\recording_20251107231731.webm
+[2025-11-07T15:17:32.961682+00:00] AUDIO converted sid=SOTUR-qjdST165AgAAAD webm=uploads\SOTUR-qjdST165AgAAAD\audio\recording_20251107231731.webm wav=uploads\SOTUR-qjdST165AgAAAD\audio\recording_20251107231731.wav
+[2025-11-07T15:19:07.580629+00:00] AUTH failed sid=gZwXmzizbxv5YP8UAAAF token_present=True
+[2025-11-07T15:19:07.759737+00:00] AUTH success sid=gZwXmzizbxv5YP8UAAAF user=dev_8mtbq8 client_public_key_present=False session_key_pending=False
+[2025-11-07T15:19:23.860555+00:00] AUTH success sid=sahgWLgcw3Ap3rBDAAAH user=dev_8mtbq8 client_public_key_present=False session_key_pending=False
+[2025-11-07T15:19:42.692009+00:00] AUTH success sid=-QzN828b1GYzxEzAAAAJ user=dev_8mtbq8 client_public_key_present=False session_key_pending=False
+[2025-11-08T01:24:20.963845+00:00] DISCONNECT sid=IEemOz35Duwz626lAAAB removed from DB
+[2025-11-08T01:24:30.242483+00:00] AUTH failed sid=hfZK5ObfbGTv9FC_AAAD token_present=True
+[2025-11-08T01:24:30.406357+00:00] AUTH success sid=hfZK5ObfbGTv9FC_AAAD user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T01:28:38.900833+00:00] AUTH success sid=rvBWGgP0KTkl-eC-AAAB user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T01:32:53.579198+00:00] AUTH success sid=7Y1c--qKkUjpfKH5AAAB user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T01:33:31.524721+00:00] AUDIO received sid=ntx6fxFBUyVAPBHcAAAD temp_path=uploads\ntx6fxFBUyVAPBHcAAAD\audio\recording_20251108093331.webm
+[2025-11-08T01:33:33.020893+00:00] AUDIO converted sid=ntx6fxFBUyVAPBHcAAAD webm=uploads\ntx6fxFBUyVAPBHcAAAD\audio\recording_20251108093331.webm wav=uploads\ntx6fxFBUyVAPBHcAAAD\audio\recording_20251108093331.wav
+[2025-11-08T01:39:42.523975+00:00] AUTH success sid=QOH-UYxNeIbVbQshAAAF user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T01:49:02.531743+00:00] DISCONNECT sid=sJeosuEv2wQAoaERAAAB removed from DB
+[2025-11-08T01:49:08.527775+00:00] AUTH success sid=o-gQkuNa3ztkUjuvAAAD user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T01:49:54.726304+00:00] AUDIO received sid=3nk9bQhVLXaPUqFBAAAF temp_path=uploads\3nk9bQhVLXaPUqFBAAAF\audio\recording_20251108094954.webm
+[2025-11-08T01:49:56.297356+00:00] AUDIO converted sid=3nk9bQhVLXaPUqFBAAAF webm=uploads\3nk9bQhVLXaPUqFBAAAF\audio\recording_20251108094954.webm wav=uploads\3nk9bQhVLXaPUqFBAAAF\audio\recording_20251108094954.wav
+[2025-11-08T01:50:20.578225+00:00] DISCONNECT sid=o-gQkuNa3ztkUjuvAAAD removed from DB
+[2025-11-08T01:50:20.645258+00:00] AUTH success sid=y3MphW7XtDtbkz53AAAH user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T01:50:38.966003+00:00] DISCONNECT sid=3nk9bQhVLXaPUqFBAAAF removed from DB
+[2025-11-08T01:50:39.042667+00:00] DISCONNECT sid=y3MphW7XtDtbkz53AAAH removed from DB
+[2025-11-08T01:53:55.335627+00:00] AUDIO received sid=f3kjuEBhEfkhMNHyAAAJ temp_path=uploads\f3kjuEBhEfkhMNHyAAAJ\audio\recording_20251108095355.webm
+[2025-11-08T01:53:57.158703+00:00] AUDIO converted sid=f3kjuEBhEfkhMNHyAAAJ webm=uploads\f3kjuEBhEfkhMNHyAAAJ\audio\recording_20251108095355.webm wav=uploads\f3kjuEBhEfkhMNHyAAAJ\audio\recording_20251108095355.wav
+[2025-11-08T01:54:33.304089+00:00] AUTH success sid=Qt9aQvfoAXPg1tpyAAAL user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T02:01:25.920474+00:00] AUTH success sid=rY9EJJIvgExUQgByAAAD user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T02:02:01.258196+00:00] AUTH success sid=vlYSzMksaFnu9Mf-AAAD user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T02:04:00.704048+00:00] AUTH success sid=hB5f3_EVDsIVAounAAAC user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T02:04:34.420031+00:00] AUTH success sid=yzKe8a0wUsqJIcRxAAAC user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T02:13:44.181057+00:00] DISCONNECT sid=noBV-rwsWqVJfv8RAAAB removed from DB
+[2025-11-08T02:13:44.214774+00:00] DISCONNECT sid=noBV-rwsWqVJfv8RAAAB cleared history
+[2025-11-08T02:13:49.128319+00:00] AUTH success sid=VbGbTZtEqbM15JGTAAAD user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T02:15:01.409993+00:00] AUTH success sid=PbmKPhO_9S_CaHSOAAAF user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T02:15:21.484104+00:00] AUTH success sid=JFUVRfq-SiZ7-g1YAAAH user=dev_1x0j6g client_public_key_present=False session_key_pending=False
+[2025-11-08T02:16:44.128454+00:00] AUDIO received sid=uYepydbiwvfmR40OAAAJ temp_path=uploads\uYepydbiwvfmR40OAAAJ\audio\recording_20251108101644.webm
+[2025-11-08T02:16:45.718049+00:00] AUDIO converted sid=uYepydbiwvfmR40OAAAJ webm=uploads\uYepydbiwvfmR40OAAAJ\audio\recording_20251108101644.webm wav=uploads\uYepydbiwvfmR40OAAAJ\audio\recording_20251108101644.wav
+[2025-11-08T05:36:00.149425+00:00] AUDIO received sid=h8oYvAkOZRtaHso3AAAB temp_path=uploads\h8oYvAkOZRtaHso3AAAB\audio\recording_20251108133600.webm
+[2025-11-08T06:54:57.396095+00:00] AUDIO received sid=LWZxMLPhAUQAVAQHAAAB temp_path=uploads\LWZxMLPhAUQAVAQHAAAB\audio\recording_20251108145457.webm
+[2025-11-08T07:01:03.192946+00:00] DISCONNECT sid=LWZxMLPhAUQAVAQHAAAB removed from DB
+[2025-11-08T07:01:03.194939+00:00] DISCONNECT sid=LWZxMLPhAUQAVAQHAAAB cleared history

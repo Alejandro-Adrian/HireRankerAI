@@ -1,163 +1,84 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { AudioRecorder } from '../utils/audioRecorder';
 
-// Audio capture component: records audio in 30s chunks via MediaRecorder,
-// sends each chunk to a web worker which uploads to the server endpoint /upload_audio_chunk
-// After ~5 minutes the component stops recording and asks the server to merge chunks.
+export default function AudioCapture() {
+    const recorderRef = useRef<AudioRecorder | null>(null);
+    const [transcriptiontext, setTranscriptionText] = useState<string>("No transcription Yet....");
+    const [AISummaryText, setAISummaryText] = useState<string>("No Summary Yet......");
+    const [processing, setProcessing] = useState<boolean>(false);
+    // separate flags for pipeline stages
+    const [transcribing, setTranscribing] = useState<boolean>(false);
+    const [summarizing, setSummarizing] = useState<boolean>(false);
 
-type Props = {
-    autoStart?: boolean; // start on mount
-    username?: string; // session username; if not provided we'll fetch from localStorage 'username' or 'authUser'
-}
-
-export default function AudioCapture({ autoStart = false, username }: Props) {
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const streamRef = useRef<MediaStream | null>(null);
-    const workerRef = useRef<Worker | null>(null);
-    const chunkSeq = useRef<number>(0);
-    const [recording, setRecording] = useState(false);
-    const mergeTimerRef = useRef<number | null>(null);
-
-    const getUsername = () => {
-        if (username) return username;
-        if (typeof window !== 'undefined') {
-            return (localStorage.getItem('authUser') || localStorage.getItem('username') || 'anonymous');
-        }
-        return 'anonymous';
+    const getApiBase = () => {
+        if (typeof window === 'undefined') return 'http://localhost:5000';
+        const stored = localStorage.getItem('apiBase');
+        if (stored) return stored.replace(/\/$/, '');
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return 'http://localhost:5000';
+        return window.location.origin;
     };
 
-    const [uploadStatus, setUploadStatus] = useState<Record<number, string>>({});
-    const [mergeStatus, setMergeStatus] = useState<string | null>(null);
-
-    useEffect(() => {
-        // create worker from public path
-        if (typeof window !== 'undefined') {
-            try {
-                workerRef.current = new Worker('/audioWorker.js');
-                workerRef.current.onmessage = (ev) => {
-                    // handle ack from worker
-                    const msg = ev.data;
-                    console.log('[audioWorker]', msg);
-                    if (msg?.action === 'uploaded') {
-                        setUploadStatus((prev) => ({ ...(prev || {}), [msg.seq]: msg.ok ? 'uploaded' : 'failed' }));
-                    } else if (msg?.action === 'merged') {
-                        setMergeStatus(msg.ok ? 'merged' : 'merge_failed');
-                    } else if (msg?.action === 'error') {
-                        setMergeStatus('worker_error');
-                    }
-                };
-            } catch (e) {
-                console.error('Failed to create audio worker:', e);
-            }
-        }
-
-        if (autoStart) startRecording();
-
-        return () => {
-            stopRecording();
-            if (workerRef.current) {
-                workerRef.current.terminate();
-                workerRef.current = null;
-            }
-        };
-    }, []);
-
-    const startRecording = async () => {
-        if (recording) return;
-        try {
-            const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-            streamRef.current = s;
-            const options: MediaRecorderOptions = { mimeType: 'audio/webm' };
-            const mr = new MediaRecorder(s, options);
-            mediaRecorderRef.current = mr;
-
-            mr.ondataavailable = (ev: BlobEvent) => {
-                if (ev.data && ev.data.size > 0) {
-                    const seq = ++chunkSeq.current;
-                    // send chunk to worker for upload
-                    if (workerRef.current) {
-                        // send transferable ArrayBuffer to worker (ArrayBuffer is transferable).
-                        // The worker will reconstruct a Blob from the buffer and content type.
-                        ev.data.arrayBuffer().then((buf) => {
-                            const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-                            const mimeType = (ev.data && ev.data.type) || 'audio/webm';
-                            // Determine API base. Allow override via localStorage 'apiBase' for multi-origin setups.
-                            const apiBase = (typeof window !== 'undefined' && (localStorage.getItem('apiBase') || window.location.origin)) || '';
-                            // Post the raw buffer as transferable to avoid DataCloneError. Include apiBase so the worker can reach the backend when origins differ.
-                            workerRef.current!.postMessage({ action: 'upload_chunk', username: getUsername(), seq, token, buffer: buf, mimeType, apiBase }, [buf]);
-                            setUploadStatus((prev) => ({ ...(prev || {}), [seq]: 'pending' }));
-                        });
-                    }
+    function start() {
+    if (!recorderRef.current) {
+        const apiBase = getApiBase();
+        const token = localStorage.getItem('authToken') || undefined;
+        // pass a callback to receive processing events
+        recorderRef.current = new AudioRecorder(
+        apiBase,
+        undefined,
+        token,
+        (payload) => {
+            // payload: { type: 'ack'|'results'|'sent', data }
+            if (payload.type === 'sent') {
+                // we've sent audio to the server; begin both phases
+                setProcessing(true);
+                setTranscribing(true);
+                setSummarizing(true);
+            } else if (payload.type === 'ack') {
+                // server acknowledged save; continue showing processing
+                setProcessing(true);
+            } else if (payload.type === 'results') {
+                const d = payload.data || {};
+                // If server returns transcription and/or summary separately, update each flag independently
+                if (d.transcription) {
+                    setTranscriptionText(d.transcription);
+                    setTranscribing(false);
                 }
-            };
-
-            mr.onstart = () => {
-                console.log('MediaRecorder started');
-                setRecording(true);
-            };
-            mr.onstop = () => {
-                console.log('MediaRecorder stopped');
-                setRecording(false);
-            };
-
-            // Start and request data every 30s
-            mr.start(30_000);
-
-            // Schedule automatic stop + merge after ~5 minutes (300000 ms)
-            if (mergeTimerRef.current) {
-                window.clearTimeout(mergeTimerRef.current);
+                if (d.summary) {
+                    setAISummaryText(d.summary);
+                    setSummarizing(false);
+                }
+                // If both stages finished, clear global processing
+                if ((d.transcription || !transcribing) && (d.summary || !summarizing)) {
+                    // small guard: if either field is missing but flags were already false, consider done
+                    setProcessing(false);
+                }
             }
-            mergeTimerRef.current = window.setTimeout(() => {
-                // stop recorder and request merge
-                stopRecording(true);
-            }, 5 * 60 * 1000);
-        } catch (e) {
-            console.error('Error starting audio capture:', e);
         }
-    };
+        );
+    }
+    recorderRef.current.startRecording();
+    }
 
-    const stopRecording = (requestMerge = false) => {
-        try {
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                mediaRecorderRef.current.stop();
-            }
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach((t) => t.stop());
-                streamRef.current = null;
-            }
-        } catch (e) {
-            console.warn('stopRecording error', e);
-        }
-        setRecording(false);
-        if (mergeTimerRef.current) {
-            window.clearTimeout(mergeTimerRef.current);
-            mergeTimerRef.current = null;
-        }
-            if (requestMerge && workerRef.current) {
-                const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-                const apiBase = (typeof window !== 'undefined' && (localStorage.getItem('apiBase') || window.location.origin)) || '';
-                setMergeStatus('requested');
-                workerRef.current.postMessage({ action: 'merge', username: getUsername(), token, apiBase });
-        }
-    };
+    function stop() {
+    recorderRef.current?.stopRecording();
+    // show processing until results arrive
+    setProcessing(true);
+    }
+
+    function play() {
+    recorderRef.current?.playSavedAudio();
+    }
 
     return (
-        <div>
-            <h2>Audio Capture</h2>
-            <p>Recording: {recording ? 'ON' : 'OFF'}</p>
-                    <div className="flex gap-2">
-                <button onClick={() => startRecording()} disabled={recording} className="px-3 py-1 bg-green-500 text-white rounded">Start</button>
-                <button onClick={() => stopRecording(true)} disabled={!recording} className="px-3 py-1 bg-red-500 text-white rounded">Stop & Merge</button>
-            </div>
-                    <p className="mt-2 text-sm text-gray-600">Chunks are uploaded every 30s; the component auto-stops and requests merge after ~5 minutes.</p>
-                    <div className="mt-2 text-sm">
-                        <div>Merge status: {mergeStatus ?? 'idle'}</div>
-                        <div className="mt-1">Uploads:</div>
-                        <ul className="text-xs">
-                            {Object.entries(uploadStatus).map(([k, v]) => (
-                                <li key={k}>Chunk {k}: {v}</li>
-                            ))}
-                        </ul>
-                    </div>
-        </div>
+    <div>
+        <button onClick={start}>🎙️ Record</button>
+        <button onClick={stop}>🛑 Stop & Send</button>
+        <button onClick={play}>▶️ Play</button>
+    <h1>Transcription</h1>
+    <p>{transcribing ? 'Transcribing...' : transcriptiontext}</p>
+    <h1>AI Summary</h1>
+    <p>{summarizing ? 'Generating summary...' : AISummaryText}</p>
+    </div>
     );
 }

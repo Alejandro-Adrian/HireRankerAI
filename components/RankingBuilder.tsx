@@ -1,21 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
-import {
-  ArrowLeft,
-  Save,
-  Link2,
-  MapPin,
-  Sliders,
-  CheckCircle,
-  Sparkles,
-  CheckSquare,
-  Square,
-  AlertTriangle,
-  Star,
-  Zap,
-  Plus,
-  X,
-} from "lucide-react"
+import { ArrowLeft, Save, Link2, MapPin, Sliders, CheckCircle, Sparkles, CheckSquare, Square, AlertTriangle, Star, Zap, Plus, X } from 'lucide-react'
 
 interface Criterion {
   id: string
@@ -593,7 +578,7 @@ export default function RankingBuilder({ ranking, onBack, onComplete, onNotifica
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g., Restaurant Server Position - Downtown Location"
-                  className="w-full px-4 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-emerald-200/50 dark:border-emerald-800/50 rounded-2xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-300 hover:border-emerald-300 dark:hover:border-emerald-600 font-open-sans"
+                  className="w-full px-4 py-4 bg-white dark:bg-slate-800 border-2 border-emerald-300 dark:border-emerald-700 rounded-2xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/30 transition-all duration-300 hover:border-emerald-400 dark:hover:border-emerald-600 font-open-sans shadow-sm"
                 />
               </div>
               <div className="space-y-2">
@@ -607,7 +592,7 @@ export default function RankingBuilder({ ranking, onBack, onComplete, onNotifica
                   id="position"
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
-                  className="w-full px-4 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-emerald-200/50 dark:border-emerald-800/50 rounded-2xl text-slate-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-300 hover:border-emerald-300 dark:hover:border-emerald-600 font-open-sans"
+                  className="w-full px-4 py-4 bg-white dark:bg-slate-800 border-2 border-emerald-300 dark:border-emerald-700 rounded-2xl text-slate-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/30 transition-all duration-300 hover:border-emerald-400 dark:hover:border-emerald-600 font-open-sans shadow-sm"
                 >
                   <option value="">Select a position</option>
                   {JOB_POSITIONS.map((pos) => (
@@ -631,7 +616,7 @@ export default function RankingBuilder({ ranking, onBack, onComplete, onNotifica
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 placeholder="Describe the role, requirements, and what you're looking for in candidates..."
-                className="w-full px-4 py-4 bg-white/50 dark:bg-slate-800/50 border-2 border-emerald-200/50 dark:border-emerald-800/50 rounded-2xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-300 hover:border-emerald-300 dark:hover:border-emerald-600 font-open-sans resize-none"
+                className="w-full px-4 py-4 bg-white dark:bg-slate-800 border-2 border-emerald-300 dark:border-emerald-700 rounded-2xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/30 transition-all duration-300 hover:border-emerald-400 dark:hover:border-emerald-600 font-open-sans resize-none shadow-sm"
               />
             </div>
             <div className="mt-6 flex items-center space-x-3">
@@ -761,7 +746,7 @@ export default function RankingBuilder({ ranking, onBack, onComplete, onNotifica
                                   value={areaCity}
                                   onChange={(e) => setAreaCity(e.target.value)}
                                   placeholder="e.g., New York, Los Angeles"
-                                  className="w-full px-4 py-3 bg-white/50 dark:bg-slate-800/50 border-2 border-emerald-200/50 dark:border-emerald-800/50 rounded-xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-300 font-open-sans"
+                                  className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-emerald-300 dark:border-emerald-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/30 transition-all duration-300 font-open-sans shadow-sm"
                                 />
                               </div>
                             )}
@@ -894,7 +879,7 @@ export default function RankingBuilder({ ranking, onBack, onComplete, onNotifica
                               value={criterion.keyword}
                               onChange={(e) => updateCustomCriterion(criterion.id, "keyword", e.target.value)}
                               placeholder="e.g., Python, Leadership, MBA"
-                              className="w-full px-3 py-2 bg-white/50 dark:bg-slate-800/50 border-2 border-purple-200/50 dark:border-purple-800/50 rounded-xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300"
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border-2 border-purple-300 dark:border-purple-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all duration-300 shadow-sm"
                             />
                           </div>
                           <div>
@@ -909,7 +894,7 @@ export default function RankingBuilder({ ranking, onBack, onComplete, onNotifica
                               }
                               min="1"
                               max="100"
-                              className="w-full px-3 py-2 bg-white/50 dark:bg-slate-800/50 border-2 border-purple-200/50 dark:border-purple-800/50 rounded-xl text-slate-900 dark:text-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300"
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border-2 border-purple-300 dark:border-purple-700 rounded-xl text-slate-900 dark:text-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/30 transition-all duration-300 shadow-sm"
                             />
                           </div>
                         </div>

@@ -44,8 +44,9 @@ if exist requirements.txt (
   pip install -r requirements.txt
 )
 
-echo Running test suite (test_app.py)...
-python -m pytest test_app.py -q
+echo Running test suite (all tests)...
+REM Run full pytest suite so both test_app.py and AI/tests are executed
+python -m pytest -q
 if ERRORLEVEL 1 (
   echo.
   echo TESTS FAILED. Server will not start. Fix failures and re-run this script.

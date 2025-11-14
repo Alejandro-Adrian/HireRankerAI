@@ -14,6 +14,8 @@ export default function AIOverlay() {
   const [userBubble, setUserBubble] = useState<string | null>(null);
   const [eonDisplayedText, setEonDisplayedText] = useState<string>("");
   const [eonState, setEonState] = useState<EonState>("neutral");
+  const [historyUsed, setHistoryUsed] = useState<boolean | null>(null);
+  const [historyLen, setHistoryLen] = useState<number>(0);
 
   const authTokenRef = useRef<string | null>(
     typeof window !== "undefined" ? localStorage.getItem("authToken") : null
@@ -175,6 +177,15 @@ r7PBasRWL4oAa5LCFQUknsXw
     // If client is in plaintext mode, server will return plaintext objects
     if (PLAINTEXT_MODE) {
       text = extractTextFromPayload(data);
+      // capture history flags if present
+      try {
+        if (data && typeof data === 'object') {
+          if (typeof data.history_used !== 'undefined') setHistoryUsed(Boolean(data.history_used));
+          if (typeof data.history_len !== 'undefined') setHistoryLen(Number(data.history_len) || 0);
+        }
+      } catch (e) {
+        console.error('failed to read history flags from payload', e);
+      }
     } else {
       // Prefer AES-GCM symmetric decryption if we have a session key
       if (sessionKeyCryptoRef.current && data?.encrypted && data?.iv) {
@@ -323,7 +334,45 @@ r7PBasRWL4oAa5LCFQUknsXw
     setUserBubble(trimmed);
     setMessage("");
     setEonState("thinking");
-    setEonDisplayedText("Thinking..."); // <- ensure UI shows "Thinking..." while AI processes
+
+    // If this is a >find command, perform a safe server-side lookup first
+    // so the browser doesn't need DB service-role keys. The server will
+    // then be able to summarize the results when it sees the DB_RESULTS prefix.
+    try {
+      const m = trimmed.match(/^>find\s+(.+)/i);
+      if (m) {
+        const query = m[1].trim();
+        // call the server lookup endpoint
+        fetch(`${getApiBase()}/lookup?q=${encodeURIComponent(query)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.db_lookup_unavailable) {
+              // If server couldn't reach DB, fall back to sending original message
+              const payload = { instruction: "AI", message: trimmed };
+              messageQueue.current.push(payload);
+              processQueue();
+              return;
+            }
+            const rows = data?.rows || [];
+            // Attach DB_RESULTS prefix so server routing can include/summarize them
+            const dbResultsStr = JSON.stringify(rows);
+            const messageWithResults = `[DB_RESULTS:${dbResultsStr}]\n${trimmed}`;
+            const payload = { instruction: "AI", message: messageWithResults };
+            messageQueue.current.push(payload);
+            processQueue();
+          })
+          .catch((err) => {
+            console.error("lookup failed:", err);
+            // fallback: send original message to AI
+            const payload = { instruction: "AI", message: trimmed };
+            messageQueue.current.push(payload);
+            processQueue();
+          });
+        return;
+      }
+    } catch (err) {
+      console.error(">find handling error:", err);
+    }
 
     const payload = { instruction: "AI", message: trimmed };
     messageQueue.current.push(payload);
@@ -565,8 +614,12 @@ r7PBasRWL4oAa5LCFQUknsXw
             <div className="flex items-end">
               <div className="max-w-[68%]">
                 <div className="text-xs text-white mb-1 ml-1">Eon</div>
-                <div className="bg-white/90 text-black p-3 rounded-xl shadow-md break-words whitespace-normal">
-                  {eonDisplayedText || (eonState === "thinking" ? "Thinking..." : "Lucky you! you got me. What can this handsome brain do for you?")}
+                  <div className="bg-white/90 text-black p-3 rounded-xl shadow-md break-words whitespace-normal">
+                    {eonDisplayedText || (eonState === "thinking" ? "thinking..." : "Lucky you! you got me. What can this handsome brain do for you?")}
+                </div>
+                {/* history indicator */}
+                <div className="text-xs text-gray-300 mt-1">
+                  {historyUsed === null ? null : historyUsed ? `Using session history (${historyLen/2} messages)` : `No session history used`}
                 </div>
               </div>
             </div>

@@ -1,22 +1,5 @@
 "use client"
-import {
-  BarChart3,
-  Users,
-  Calendar,
-  CheckCircle,
-  Settings,
-  LogOut,
-  Plus,
-  TrendingUp,
-  Eye,
-  Edit,
-  Link2,
-  Trash2,
-  Search,
-  X,
-  Menu,
-  ChevronRight,
-} from "lucide-react"
+import { BarChart3, Users, Calendar, CheckCircle, Settings, LogOut, Plus, TrendingUp, Eye, Edit, Link2, Trash2, Search, X, Menu, ChevronRight } from 'lucide-react'
 import { useState, useEffect, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -24,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import SettingsComponent from "./Settings"
 import RankingBuilder from "./RankingBuilder"
 import ResultsDashboard from "./ResultsDashboard"
-import VideoCallManager from "./VideoCallManager"
+import { VideoCallManager } from "./VideoCallManager"
 import NotificationCenter from "./NotificationCenter"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 
 interface DashboardProps {
   user: any
@@ -270,7 +253,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     return (
       <VideoCallManager
         rankings={rankings}
-        onBack={handleShowRankings} /* onNotification={addNotification} */
+        onBack={handleShowRankings}
+        onNotification={(message: string, type: "success" | "error" | "info") => {
+          // Notification will be handled by NotificationCenter in parent
+          console.log("[v0] Video Call Notification:", { message, type })
+        }}
         user={user}
       />
     )
@@ -392,7 +379,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <div className="sm:hidden mt-4">
               <div className="flex bg-muted rounded-lg p-1">
                 <button
-                  onClick={handleShowRankings}
+                  onClick={() => {
+                    handleCreateRanking()
+                    setShowMobileSidebar(false)
+                  }}
                   className={`flex-1 py-3 px-4 rounded-md text-sm font-semibold transition-all duration-300 font-work-sans ${
                     activeTab === "rankings" ? "bg-primary text-primary-foreground" : "text-foreground"
                   }`}
@@ -400,7 +390,21 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   Rankings
                 </button>
                 <button
-                  onClick={handleShowVideoCalls}
+                  onClick={() => {
+                    setShowSettings(true)
+                    setShowMobileSidebar(false)
+                  }}
+                  className={`flex-1 py-3 px-4 rounded-md text-sm font-semibold transition-all duration-300 font-work-sans ${
+                    activeTab === "settings" ? "bg-primary text-primary-foreground" : "text-foreground"
+                  }`}
+                >
+                  Settings
+                </button>
+                <button
+                  onClick={() => {
+                    handleShowVideoCalls()
+                    setShowMobileSidebar(false)
+                  }}
                   className={`flex-1 py-3 px-4 rounded-md text-sm font-semibold transition-all duration-300 font-work-sans ${
                     activeTab === "videocalls" ? "bg-primary text-primary-foreground" : "text-foreground"
                   }`}

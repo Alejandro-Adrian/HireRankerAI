@@ -22,6 +22,7 @@ try:
 except Exception:
     requests = None
 
+UPLOAD_FOLDER = "uploads"
 
 def _get_supabase_config():
     # Try several env names used across the repo
@@ -34,38 +35,94 @@ def search_applicants(query, limit=5):
     """Query the Supabase 'applicants' table via PostgREST. Returns list of rows or [] on no results.
     This function is defensive: it returns None if requests isn't available or config is missing.
     """
-    if not requests:
-        return None
+    # Try Supabase REST first (if configured)
     supabase_url, supabase_key = _get_supabase_config()
-    if not supabase_url or not supabase_key:
-        return None
-    try:
-        from urllib.parse import quote_plus
-        # If query looks like an email, use exact match on applicant_email
-        import re
-        email_m = re.search(r"[\w\.\-+]+@[\w\.-]+", query or "")
-        headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Accept": "application/json"}
-        base = supabase_url.rstrip('/') + '/rest/v1/applicants'
-        if email_m:
-            email = quote_plus(email_m.group(0))
-            url = f"{base}?select=*&applicant_email=eq.{email}&limit={limit}"
-        else:
-            # search name or email with ilike
-            ilike = quote_plus(f"%{query}%")
-            # Use PostgREST or param-based filter
-            url = f"{base}?select=*&or=applicant_name.ilike.{ilike},applicant_email.ilike.{ilike}&limit={limit}"
+    if requests and supabase_url and supabase_key:
+        try:
+            from urllib.parse import quote_plus
+            import re
+            email_m = re.search(r"[\w\.\-+]+@[\w\.-]+", query or "")
+            headers = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Accept": "application/json"}
+            base = supabase_url.rstrip('/') + '/rest/v1/applicants'
+            if email_m:
+                email = quote_plus(email_m.group(0))
+                url = f"{base}?select=*&applicant_email=eq.{email}&limit={limit}"
+            else:
+                ilike = quote_plus(f"%{query}%")
+                url = f"{base}?select=*&or=applicant_name.ilike.{ilike},applicant_email.ilike.{ilike}&limit={limit}"
 
-        r = requests.get(url, headers=headers, timeout=6)
-        if r.status_code == 200:
-            try:
-                rows = r.json()
-                return rows or []
-            except Exception:
-                return []
-        else:
-            return []
-    except Exception:
-        return None
+            r = requests.get(url, headers=headers, timeout=6)
+            if r.status_code == 200:
+                try:
+                    rows = r.json()
+                    return rows or []
+                except Exception:
+                    return []
+            else:
+                print(f"[search_applicants] Supabase returned status {r.status_code}")
+        except Exception as e:
+            print(f"[search_applicants] Supabase request failed: {e}")
+
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        try:
+            import psycopg2
+            import psycopg2.extras
+            conn = psycopg2.connect(db_url, connect_timeout=3)
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            email_m = re.search(r"[\w\.\-+]+@[\w\.-]+", query or "")
+            if email_m:
+                cur.execute("SELECT * FROM applicants WHERE applicant_email = %s LIMIT %s", (email_m.group(0), limit))
+            else:
+                likep = f"%{query}%"
+                cur.execute("SELECT * FROM applicants WHERE applicant_name ILIKE %s OR applicant_email ILIKE %s LIMIT %s", (likep, likep, limit))
+            rows = cur.fetchall()
+            cur.close()
+            conn.close()
+            return [dict(r) for r in rows] or []
+        except Exception as e:
+            print(f"[search_applicants] Postgres fallback failed: {e}")
+
+    # Fallback 2: Try a local SQLite file (default 'app.db' or env LOCAL_DB_PATH). Search 'applicants' or 'applications'
+    local_db = os.getenv("LOCAL_DB_PATH") or os.path.join(os.path.dirname(os.path.dirname(__file__)), "app.db")
+    try:
+        if os.path.exists(local_db):
+            conn = sqlite3.connect(local_db)
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            email_m = re.search(r"[\w\.\-+]+@[\w\.-]+", query or "")
+            results = []
+            if email_m:
+                cur.execute("SELECT * FROM applicants WHERE applicant_email = ? LIMIT ?", (email_m.group(0), limit))
+                rows = cur.fetchall()
+                results.extend(rows)
+            else:
+                likep = f"%{query}%"
+                try:
+                    cur.execute("SELECT * FROM applicants WHERE applicant_name LIKE ? OR applicant_email LIKE ? LIMIT ?", (likep, likep, limit))
+                    rows = cur.fetchall()
+                    results.extend(rows)
+                except Exception:
+                    try:
+                        cur.execute("SELECT id as applicant_id, applicant_name, applicant_email, applicant_phone, resume_summary FROM applications WHERE applicant_name LIKE ? OR applicant_email LIKE ? LIMIT ?", (likep, likep, limit))
+                        rows = cur.fetchall()
+                        results.extend(rows)
+                    except Exception:
+                        pass
+
+            conn.close()
+            out = []
+            for r in results:
+                try:
+                    out.append({k: r[k] for k in r.keys()})
+                except Exception:
+                    out.append(dict(r))
+            return out or []
+    except Exception as e:
+        print(f"[search_applicants] SQLite fallback failed: {e}")
+
+    # Nothing available
+    return None
 
 
 def find_applicant_query(message: str):
@@ -80,6 +137,11 @@ def find_applicant_query(message: str):
         return None
     import re
     s = message.strip()
+    # New: support >find NAME syntax used by the frontend chat: ">find John Doe"
+    # Accept >find at the start or anywhere in the string (e.g. after a DB_RESULTS prefix)
+    m_find = re.search(r">find\s+(.+?)($|\n|\r)", s, flags=re.I)
+    if m_find:
+        return m_find.group(1).strip()
     # email
     m = re.search(r"[\w\.\-+]+@[\w\.-]+", s)
     if m:
@@ -196,6 +258,18 @@ def init_db():
         )
         """
     )
+    # history table: keep per-session chat history (role: 'user' or 'ai')
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sid TEXT,
+            role TEXT,
+            message TEXT,
+            created_at TEXT
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -278,6 +352,50 @@ def db_get_session(sid):
         "created_at": row[4],
     }
 
+
+def add_history(sid: str, role: str, message: str):
+    try:
+        if not sid or not role or message is None:
+            return
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute(
+            "INSERT INTO history (sid, role, message, created_at) VALUES (?, ?, ?, ?)",
+            (sid, role, message, datetime.datetime.now(datetime.timezone.utc).isoformat()),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[history] add_history failed for sid={sid}: {e}")
+
+
+def get_history(sid: str):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("SELECT role, message, created_at FROM history WHERE sid=? ORDER BY id ASC", (sid,))
+        rows = c.fetchall()
+        conn.close()
+        out = []
+        for r in rows:
+            out.append({"role": r[0], "message": r[1], "created_at": r[2]})
+        return out
+    except Exception as e:
+        print(f"[history] get_history failed for sid={sid}: {e}")
+        return []
+
+
+def clear_history(sid: str):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("DELETE FROM history WHERE sid=?", (sid,))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[history] clear_history failed for sid={sid}: {e}")
+
 def generate_token(username):
     payload = {
         "user": username,
@@ -317,39 +435,140 @@ def login():
     token = generate_token(username)
     return jsonify({"token": token})
 
-async def routing(instruction, message):
+async def routing(instruction, message, session_id=None):
     # cache key
     key = f"{instruction}:{message}"
     cached = _ai_cache.get(key)
     if cached is not None:
         return cached
 
-    
-
+    print(f"[routing] Received instruction: {instruction}, message: {message}")  # Debugging log
     async with _ai_semaphore:
         try:
+            # load session history early so we can annotate payloads and include it in prompts
+            history_rows = []
+            try:
+                if session_id:
+                    history_rows = get_history(session_id) or []
+            except Exception:
+                history_rows = []
+
             # Check whether this message asks for an applicant lookup
             db_rows = None
+            db_lookup_unavailable = False
             query_term = find_applicant_query(message)
+            print(f"[routing] Extracted query term: {query_term}")  # Debugging log
+
             if query_term:
                 try:
                     rows = search_applicants(query_term, limit=6)
-                    if rows:
-                        # attach DB rows and also prepend them into the prompt so the AI can reference them
+                    # rows == None => search backends unreachable/disabled
+                    if rows is None:
+                        db_lookup_unavailable = True
+                        print(f"[routing] DB lookup unavailable for query: {query_term}")
+                    else:
+                        # rows found (may be empty list)
                         db_rows = rows
-                        try:
-                            message = f"[DB_RESULTS:{json.dumps(rows)}]\n" + (message or "")
-                        except Exception:
-                            # fall back to stringified rows
-                            message = f"[DB_RESULTS:{str(rows)}]\n" + (message or "")
+                        print(f"[routing] DB lookup returned rows: {rows}")  # Debugging log
 
-                except Exception:
-                    pass
+                        # If we have actual rows, produce a concise AI summary specifically for the lookup
+                        if rows:
+                            try:
+                                # Build a prompt that asks the AI to summarize the applicant rows
+                                prompt = f"You are given applicant database results in JSON format. Provide a concise summary of each record and highlight the most relevant details.\n\nDB_RESULTS={json.dumps(rows)}\n\nUser query: {query_term}\n\nRespond as a short, human-readable summary."
+                                summary = await AI_Interface(prompt, "chat")
+                                print(f"[routing] AI summary generated: {summary}")  # Debugging log
+                                # Prepare a payload that prioritizes the DB lookup summary
+                                payload = {"message": summary, "db_results": rows}
+                                # annotate whether history was used/present
+                                try:
+                                    payload["history_used"] = bool(history_rows)
+                                    payload["history_len"] = len(history_rows)
+                                except Exception:
+                                    pass
+                                # persist history (user asked a find and AI produced summary)
+                                try:
+                                    if session_id:
+                                        add_history(session_id, "user", message)
+                                        add_history(session_id, "ai", summary)
+                                except Exception:
+                                    pass
+                                if PLAINTEXT_MODE:
+                                    # cache and return early with plaintext payload
+                                    try:
+                                        _ai_cache.set(key, payload)
+                                    except Exception:
+                                        pass
+                                    return payload
+                                else:
+                                    # in encrypted mode we'll let the normal flow handle encryption later
+                                    # attach db_rows to message and continue
+                                    message = f"[DB_RESULTS:{json.dumps(rows)}]\n" + (message or "")
+                            except Exception as e:
+                                print(f"[routing] AI summarization of DB results failed: {e}")
+                                traceback.print_exc()
+                                # fallback: include DB_RESULTS in the prompt for the later AI call
+                                try:
+                                    message = f"[DB_RESULTS:{json.dumps(rows)}]\n" + (message or "")
+                                except Exception:
+                                    message = f"[DB_RESULTS:{str(rows)}]\n" + (message or "")
+                except Exception as e:
+                    print(f"[routing] Exception during DB lookup: {e}")  # Debugging log
+                    traceback.print_exc()
 
             if instruction == "AI":
-                result = await AI_Interface(message, "chat")
+                # Prepend conversation history (if any) to the message so the AI has context
+                try:
+                    if history_rows:
+                        hist_text = "".join([f"{r['role'].capitalize()}: {r['message']}\n" for r in history_rows])
+                        combined_message = f"Conversation history:\n{hist_text}\nUser: {message}"
+                    else:
+                        combined_message = message
+                except Exception as e:
+                    print(f"[routing] history fetch failed: {e}")
+                    traceback.print_exc()
+                    combined_message = message
+
+                result = await AI_Interface(combined_message, "chat")
+                # annotate whether history was used/present
+                try:
+                    history_used_flag = bool(history_rows)
+                except Exception:
+                    history_used_flag = False
+                # persist history: user message + AI response
+                try:
+                    if session_id:
+                        add_history(session_id, "user", message)
+                        # AI result may be complex; store as string
+                        add_history(session_id, "ai", str(result))
+                        # enforce truncation policy after adding new messages
+                        try:
+                            max_msgs = int(os.getenv("AI_HISTORY_MAX_MESSAGES") or 20)
+                        except Exception:
+                            max_msgs = 20
+                        try:
+                            # count current messages
+                            conn = sqlite3.connect(DB_PATH)
+                            cur = conn.cursor()
+                            cur.execute("SELECT COUNT(1) FROM history WHERE sid=?", (session_id,))
+                            cnt = cur.fetchone()[0]
+                            if cnt > max_msgs:
+                                excess = cnt - max_msgs
+                                cur.execute("DELETE FROM history WHERE id IN (SELECT id FROM history WHERE sid=? ORDER BY id ASC LIMIT ?)", (session_id, excess))
+                                conn.commit()
+                            conn.close()
+                        except Exception as e:
+                            print(f"[routing] history truncation failed: {e}")
+                except Exception as e:
+                    print(f"[routing] failed to save history: {e}")
+                    traceback.print_exc()
                 if PLAINTEXT_MODE:
                     payload = {"message": result}
+                    try:
+                        payload["history_used"] = history_used_flag
+                        payload["history_len"] = len(history_rows)
+                    except Exception:
+                        pass
                 else:
                     payload = {"encrypted": encrypt({"message": result})}
             elif instruction == "grade":
@@ -371,6 +590,17 @@ async def routing(instruction, message):
                 except Exception:
                     pass
 
+            # If a DB lookup was attempted but no backends were reachable, include a human-friendly note
+            try:
+                if 'db_lookup_unavailable' in locals() and db_lookup_unavailable:
+                    payload["db_lookup_unavailable"] = True
+                    payload["db_lookup_message"] = (
+                        "Applicant lookup is temporarily unavailable: the server couldn't reach any configured database backends. "
+                        "The AI couldn't fetch applicant data automatically — please try again later or provide more details."
+                    )
+            except Exception:
+                pass
+
             # store in cache
             try:
                 _ai_cache.set(key, payload)
@@ -389,6 +619,27 @@ async def routing(instruction, message):
 def on_connect():
     print("Client connected:", request.sid)
 
+
+@app.route("/lookup", methods=["GET"])
+def http_lookup():
+    """HTTP lookup helper for frontend: /lookup?q=searchterm
+    Returns JSON: { rows: [...], db_lookup_unavailable: bool, message: str }
+    This keeps DB credentials on the server and avoids exposing service-role keys
+    to the browser.
+    """
+    q = request.args.get("q") or request.args.get("query") or request.args.get("q")
+    if not q:
+        return jsonify({"error": "missing query parameter 'q'"}), 400
+    try:
+        rows = search_applicants(q, limit=10)
+        if rows is None:
+            return jsonify({"rows": [], "db_lookup_unavailable": True, "message": "No DB backends available"}), 200
+        return jsonify({"rows": rows}), 200
+    except Exception as e:
+        print(f"[http_lookup] Exception: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 @socketio.on("disconnect")
 def on_disconnect():
     print("🔌 Client disconnected:", request.sid)
@@ -401,177 +652,13 @@ def on_disconnect():
     except Exception as e:
         print(f"[on_disconnect] failed to remove session from DB for sid={request.sid}: {e}")
         log_event(f"DISCONNECT sid={request.sid} DB removal failed: {e}")
-
-
-@app.route("/upload_audio_chunk", methods=["POST"])
-def upload_audio_chunk():
+    # clear per-session AI history on disconnect
     try:
-        # Parse token from Authorization header (Bearer) or fallback to form/json/args
-        auth_header = request.headers.get("Authorization")
-        token = None
-        if auth_header and auth_header.lower().startswith("bearer "):
-            token = auth_header.split(" ", 1)[1].strip()
-
-        # allow token via form field, query param, or JSON body for non-multipart clients
-        if not token:
-            token = request.form.get("token") or request.args.get("token")
-            if not token:
-                try:
-                    body = request.get_json(silent=True) or {}
-                    token = body.get("token")
-                except Exception:
-                    token = None
-
-        user = verify_token(token)
-        if not user:
-            return jsonify({"error": "unauthorized"}), 401
-        username = user
-
-        # Determine upload destination
-        dest_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads", username, "audio"))
-        os.makedirs(dest_dir, exist_ok=True)
-
-        # 1) Multipart form upload (file input named 'audio')
-        if "audio" in request.files:
-            f = request.files["audio"]
-            filename = secure_filename(f.filename) if f.filename else None
-            ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-            ext = os.path.splitext(filename or "")[1] or ".webm"
-            out_name = f"chunk_{ts}{ext}"
-            out_path = os.path.join(dest_dir, out_name)
-            f.save(out_path)
-            log_event(f"AUDIO chunk (form) saved for user={username} path={out_path}")
-            return jsonify({"status": "ok", "path": out_path}), 200
-
-        # 2) JSON body with base64 field 'b64' or form field 'b64' (compatible with fetch sending JSON)
-        b64 = None
-        filename = None
-        # prefer JSON body
-        try:
-            body = request.get_json(silent=True)
-            if isinstance(body, dict):
-                b64 = body.get("b64") or body.get("data")
-                filename = body.get("filename")
-        except Exception:
-            body = None
-
-        # fallback to form fields
-        if not b64:
-            b64 = request.form.get("b64") or request.form.get("data")
-            filename = filename or request.form.get("filename")
-
-        if b64:
-            try:
-                data = base64.b64decode(b64)
-            except Exception as e:
-                return jsonify({"error": "invalid base64"}), 400
-
-            if not filename:
-                filename = f"chunk_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')}.webm"
-            out_path = os.path.join(dest_dir, secure_filename(filename))
-            with open(out_path, "wb") as fh:
-                fh.write(data)
-            log_event(f"AUDIO chunk (json b64) saved for user={username} path={out_path}")
-            return jsonify({"status": "ok", "path": out_path}), 200
-
-        return jsonify({"error": "no audio provided (expected multipart file 'audio' or JSON 'b64')"}), 400
+        clear_history(request.sid)
+        log_event(f"DISCONNECT sid={request.sid} cleared history")
     except Exception as e:
-        print(f"[upload_audio_chunk] error: {e}")
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        print(f"[on_disconnect] failed to clear history for sid={request.sid}: {e}")
 
-
-@socketio.on("upload_chunk")
-def socket_upload_chunk(payload):
-    """
-    Optional socket-based audio chunk upload support. Accepts a payload like:
-    { token: <jwt>, username: <user>, filename: <name>, b64: <base64 audio data> }
-    This handler is tolerant and will return a JSON-like dict via emit to the sender.
-    """
-    try:
-        if not isinstance(payload, dict):
-            emit("upload_chunk_result", {"ok": False, "error": "expected object payload"})
-            return
-        token = payload.get("token")
-        user = verify_token(token)
-        if not user:
-            emit("upload_chunk_result", {"ok": False, "error": "unauthorized"})
-            return
-        username = payload.get("username") or user
-        b64 = payload.get("b64")
-        filename = payload.get("filename") or f"chunk_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')}.webm"
-        if not b64:
-            emit("upload_chunk_result", {"ok": False, "error": "missing b64 audio data"})
-            return
-        try:
-            data = base64.b64decode(b64)
-        except Exception as e:
-            emit("upload_chunk_result", {"ok": False, "error": "invalid base64"})
-            return
-
-        dest_dir = os.path.join(os.path.dirname(__file__), "..", "uploads", username, "audio")
-        os.makedirs(dest_dir, exist_ok=True)
-        out_path = os.path.join(dest_dir, secure_filename(filename))
-        with open(out_path, "wb") as fh:
-            fh.write(data)
-        log_event(f"AUDIO (socket) chunk saved for user={username} path={out_path}")
-        emit("upload_chunk_result", {"ok": True, "path": out_path})
-    except Exception as e:
-        print(f"[socket_upload_chunk] error: {e}")
-        traceback.print_exc()
-        emit("upload_chunk_result", {"ok": False, "error": str(e)})
-
-
-@app.route("/merge_audio", methods=["POST"])
-def merge_audio():
-    try:
-        data = request.get_json(force=True, silent=True) or {}
-        username = data.get('username') or request.args.get('username')
-        if not username:
-            return jsonify({"error": "missing username"}), 400
-        base_dir = os.path.join(os.path.dirname(__file__), "..", "uploads", username, "audio")
-        if not os.path.isdir(base_dir):
-            return jsonify({"error": "no audio chunks found"}), 404
-        files = sorted([os.path.join(base_dir, p) for p in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir,p))])
-        if len(files) == 0:
-            return jsonify({"error": "no audio chunks found"}), 404
-
-        if AudioSegment is None:
-            return jsonify({"error": "server missing pydub/ffmpeg for merging"}), 500
-
-        # Concatenate all chunks
-        merged = None
-        for fp in files:
-            try:
-                seg = AudioSegment.from_file(fp)
-            except Exception as e:
-                print(f"[merge_audio] failed to read {fp}: {e}")
-                continue
-            if merged is None:
-                merged = seg
-            else:
-                merged += seg
-
-        if merged is None:
-            return jsonify({"error": "failed to read any chunks"}), 500
-
-        out_name = f"merged_{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.wav"
-        out_path = os.path.join(base_dir, out_name)
-        merged.export(out_path, format="wav")
-        log_event(f"AUDIO merged for user={username} out={out_path}")
-
-        # Optionally, remove chunk files after merging
-        try:
-            for fp in files:
-                os.remove(fp)
-        except Exception:
-            pass
-
-        return jsonify({"status": "ok", "merged_path": out_path}), 200
-    except Exception as e:
-        print(f"[merge_audio] error: {e}")
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
 
 @socketio.on("authenticate")
 def handle_auth(data):
@@ -647,6 +734,99 @@ def handle_auth(data):
             pass
 
 @socketio.on("client_request")
+def handle_client_request(data):
+    instruction = data.get("instruction")
+    
+    if instruction != "AUDIO":
+        # Non-audio messages (AI requests) are handled by handle_send. Call it
+        # here so a single Socket.IO event can carry both audio and AI payloads.
+        try:
+            return handle_send(data)
+        except Exception:
+            # If handle_send fails synchronously, return an error to the client
+            traceback.print_exc()
+            emit("result", {"error": "Server error handling request"}, to=request.sid)
+            return
+
+    # Prefer a client-provided session_id, but fall back to the socket session id
+    session_id = data.get("session_id") or request.sid
+    audio_b64 = data.get("audio")
+
+    if not audio_b64:
+        emit("audio_response", {"error": "No audio data received"})
+        return
+
+    try:
+        # Decode base64 to bytes
+        audio_bytes = base64.b64decode(audio_b64)
+
+        # sanitize session id for filesystem use
+        safe_sid = secure_filename(str(session_id)) or "unknown"
+        # Build folder path: uploads/{session_id}/audio/
+        session_folder = os.path.join(UPLOAD_FOLDER, safe_sid, "audio")
+        os.makedirs(session_folder, exist_ok=True)
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        webm_path = os.path.join(session_folder, f"recording_{timestamp}.webm")
+
+        # Save raw bytes to a temporary WebM file first
+        with open(webm_path, "wb") as f:
+            f.write(audio_bytes)
+
+        print("✅ WebM saved (temp):", webm_path)
+        log_event(f"AUDIO received sid={safe_sid} temp_path={webm_path}")
+
+        wav_path = None
+        saved_path = webm_path
+        # Attempt conversion to WAV if pydub (AudioSegment) is available
+        try:
+            if AudioSegment:
+                try:
+                    # pydub will require ffmpeg/avlib present on the system
+                    audio = AudioSegment.from_file(webm_path)
+                    wav_path = os.path.join(session_folder, f"recording_{timestamp}.wav")
+                    audio.export(wav_path, format="wav")
+                    print("✅ Converted to WAV:", wav_path)
+                    log_event(f"AUDIO converted sid={safe_sid} webm={webm_path} wav={wav_path}")
+                    # Conversion succeeded: remove the original WebM so only WAV remains
+                    try:
+                        os.remove(webm_path)
+                        print("🗑️ Removed temporary WebM:", webm_path)
+                    except Exception as rm_e:
+                        print(f"[audio] warning: failed to remove temp webm {webm_path}: {rm_e}")
+                    saved_path = wav_path
+                except Exception as conv_e:
+                    # Conversion failed: keep the WebM as the saved artifact
+                    print(f"[audio] conversion to WAV failed for sid={request.sid}: {conv_e}")
+                    traceback.print_exc()
+            else:
+                print("[audio] pydub not available; keeping WebM")
+        except Exception:
+            # Defensive: any unexpected error should not break the audio save flow
+            traceback.print_exc()
+
+        # Return the single saved path (WAV if conversion succeeded, otherwise WebM)
+        resp = {"message": "Audio received and saved!", "path": saved_path}
+        if wav_path:
+            resp["format"] = "wav"
+        else:
+            resp["format"] = "webm"
+        emit("audio_response", resp, to=request.sid)
+
+    except Exception as e:
+        print(f"[audio] Exception saving audio for sid={request.sid}: {e}")
+        traceback.print_exc()
+        emit("audio_response", {"error": str(e)})
+    else:
+        # After acknowledging save to the client, start background processing to transcribe & summarize
+        try:
+            # spawn a background task so we don't block the socket handler
+            socketio.start_background_task(lambda sid=request.sid, path=saved_path: process_audio_results(sid, path))
+        except Exception as e:
+            print(f"[audio] failed to start background transcription task: {e}")
+            traceback.print_exc()
+
+
 @limiter.limit("150 per minute")
 def handle_send(data):
     try:
@@ -750,7 +930,8 @@ def handle_session_key_ack():
 
 def process_task(sid, instruction, message):
     try:
-        result = asyncio.run(routing(instruction, message))
+        # pass session id into routing so it can include/persist history
+        result = asyncio.run(routing(instruction, message, session_id=sid))
         user_info = connected_users.get(sid)
         print(f"[process_task] sid={sid} instruction={instruction} message_preview={str(message)[:140]}")
         print(f"[process_task] routing result preview={str(result)[:200]}")
@@ -804,6 +985,68 @@ def process_task(sid, instruction, message):
         print("[process_task] Exception:")
         traceback.print_exc()
         socketio.emit("result", {"error": str(e)}, to=sid)
+
+
+def process_audio_results(sid: str, path: str):
+    """
+    Background worker: transcribe the saved audio file and produce a short summary
+    using the existing transcriber and AI_Interface functions. Emits 'audio_results'
+    to the originating socket with the transcription and summary (or errors).
+    """
+    try:
+        transcription = None
+        summary = None
+        # Import the project's transcriber function lazily to avoid import issues
+        try:
+            # try package import first
+            from transcriber.app import transcribe_file
+        except Exception:
+            try:
+                from AI.transcriber.app import transcribe_file
+            except Exception:
+                transcribe_file = None
+
+        if transcribe_file:
+            try:
+                print(f"[audio_bg] Transcribing {path} for sid={sid}")
+                transcription = transcribe_file(path)
+                print(f"[audio_bg] Transcription complete (sid={sid}) preview={str(transcription)[:200]}")
+            except Exception as e:
+                print(f"[audio_bg] transcription failed for {path}: {e}")
+                traceback.print_exc()
+                transcription = None
+        else:
+            print("[audio_bg] transcribe_file not available; skipping transcription")
+
+        # Summarize transcription using AI_Interface if available and transcription succeeded
+        if transcription:
+            try:
+                # AI_Interface is async; run it here synchronously
+                prompt = f"Please provide a concise summary of the following transcript:\n\n{transcription}"
+                print(f"[audio_bg] requesting summary for sid={sid}")
+                summary = asyncio.run(AI_Interface(prompt, "chat"))
+                print(f"[audio_bg] summary complete for sid={sid} preview={str(summary)[:200]}")
+            except Exception as e:
+                print(f"[audio_bg] summary generation failed: {e}")
+                traceback.print_exc()
+                summary = None
+
+        payload = {"path": path}
+        if transcription is not None:
+            payload["transcription"] = transcription
+        if summary is not None:
+            payload["summary"] = summary
+        if not transcription and not summary:
+            payload["note"] = "No transcription or summary available"
+
+        socketio.emit("audio_results", payload, to=sid)
+    except Exception as e:
+        print(f"[audio_bg] Unexpected error processing audio results for sid={sid}: {e}")
+        traceback.print_exc()
+        try:
+            socketio.emit("audio_results", {"error": str(e), "path": path}, to=sid)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

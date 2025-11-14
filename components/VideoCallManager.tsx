@@ -1,10 +1,9 @@
 "use client"
-import { Video, Calendar, Users, Send, Plus, Eye, Trash2, ArrowLeft } from "lucide-react"
+import { Video, Calendar, Users, Send, Plus, Eye, Trash2, ArrowLeft, History } from "lucide-react"
 import { useState, useEffect } from "react"
 import { revalidateVideoSessions } from "@/app/actions/video-sessions"
 import SuccessModal from "./SuccessModal"
-import SessionSummaryModal from "./SessionSummaryModal" // Import the new SessionSummaryModal component
-import { useRouter } from "next/navigation"
+import SessionSummaryModal from "./SessionSummaryModal"
 
 interface VideoCallManagerProps {
   rankings: any[]
@@ -22,6 +21,9 @@ interface VideoSession {
   created_at: string
   status: "scheduled" | "active" | "completed"
   participants_count: number
+  transcript?: string
+  summary?: string
+  duration_seconds?: number
 }
 
 interface Application {
@@ -42,20 +44,16 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
   const [selectedRankingId, setSelectedRankingId] = useState<string>("")
   const [selectedApplicationIds, setSelectedApplicationIds] = useState<string[]>([])
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [successMessage, setSuccessMessage] = useState({ title: "", message: "" })
-
-  // State for summary modal
   const [showSummaryModal, setShowSummaryModal] = useState(false)
   const [selectedSessionForSummary, setSelectedSessionForSummary] = useState<VideoSession | null>(null)
 
-  // Create session form
+  const [activeView, setActiveView] = useState<"sessions" | "history">("sessions")
+
   const [sessionTitle, setSessionTitle] = useState("")
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
-
-  const router = useRouter()
 
   useEffect(() => {
     fetchSessions()
@@ -141,7 +139,6 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
         setScheduledDate("")
         setScheduledTime("")
 
-        // Store the meeting URL to open after modal closes
         sessionStorage.setItem("meetingUrlToOpen", meetingUrl)
       } else {
         const error = await response.json()
@@ -224,22 +221,19 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
   const handleSuccessModalOk = async () => {
     setShowSuccessModal(false)
 
-    // Check if there's a meeting URL to open
     const meetingUrl = sessionStorage.getItem("meetingUrlToOpen")
     if (meetingUrl) {
       sessionStorage.removeItem("meetingUrlToOpen")
       await refreshSessions()
       window.open(meetingUrl, "_blank")
     } else {
-      // Redirect to video call page after sending invitations
       await refreshSessions()
-      router.push("/video-call")
     }
   }
 
   const fetchApplications = async (rankingId: string) => {
     try {
-      setApplications([]) // Clear previous applications
+      setApplications([])
       console.log("[v0] Fetching applications for ranking:", rankingId)
 
       const response = await fetch(`/api/rankings/${rankingId}/applications`)
@@ -257,11 +251,10 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
           applicationsData = []
         }
 
-        // Map the data to ensure we have the required fields
         const mappedApplications = applicationsData.map((app: any) => ({
           id: app.id,
-          applicant_name: app.applicant_name || app.candidate_name || app.name || "Unknown Candidate",
-          applicant_email: app.applicant_email || app.candidate_email || app.email || "No email",
+          candidate_name: app.applicant_name || app.candidate_name || app.name || "Unknown Candidate",
+          candidate_email: app.applicant_email || app.candidate_email || app.email || "No email",
           ranking_title: app.ranking_title || "Unknown Position",
           ranking_id: rankingId,
         }))
@@ -317,17 +310,19 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
     }
   }
 
-  // Function to handle viewing summary
   const handleViewSummary = (session: VideoSession) => {
     setSelectedSessionForSummary(session)
     setShowSummaryModal(true)
   }
 
+  const completedSessions = sessions.filter((s) => s.status === "completed" && (s.transcript || s.summary))
+  const activeSessions = sessions.filter((s) => s.status !== "completed")
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border sticky top-0 z-40 bg-card">
         <div className="px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2 sm:space-x-4">
               <button
                 onClick={onBack}
@@ -353,13 +348,44 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
               <span className="sm:hidden">Create</span>
             </button>
           </div>
+
+          <div className="flex gap-2 border-b border-border">
+            <button
+              onClick={() => setActiveView("sessions")}
+              className={`px-4 py-2 font-medium text-sm transition-colors ${
+                activeView === "sessions"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                Active Sessions
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveView("history")}
+              className={`px-4 py-2 font-medium text-sm transition-colors ${
+                activeView === "history"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                History ({completedSessions.length})
+              </span>
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="p-4 sm:p-6">
         <div className="border border-border rounded-lg bg-card">
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
-            <h2 className="text-base sm:text-lg font-semibold text-foreground">Video Sessions</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-foreground">
+              {activeView === "sessions" ? "Active Sessions" : "Session History"}
+            </h2>
           </div>
 
           {loading ? (
@@ -367,83 +393,115 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
               <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto"></div>
               <p className="text-muted-foreground mt-4 text-sm sm:text-base">Loading sessions...</p>
             </div>
-          ) : sessions.length === 0 ? (
+          ) : activeView === "sessions" ? (
+            activeSessions.length === 0 ? (
+              <div className="p-8 sm:p-12 text-center">
+                <Video className="h-12 w-12 sm:h-16 sm:w-16 text-muted mx-auto mb-4" />
+                <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">No active sessions</h3>
+                <p className="text-muted-foreground mb-6 text-sm sm:text-base px-4">
+                  Create your first video session to start interviewing candidates
+                </p>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="btn-primary flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 mx-auto text-sm sm:text-base"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Create First Session</span>
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {activeSessions.map((session) => (
+                  <div key={session.id} className="p-4 sm:p-6 hover:bg-muted/50 transition-all duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                      <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                          <h3 className="text-base sm:text-lg font-medium text-foreground">{session.title}</h3>
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full w-fit ${getStatusColor(session.status)}`}
+                          >
+                            {session.status}
+                          </span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-muted-foreground mb-2">
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span>
+                              {session.scheduled_at ? new Date(session.scheduled_at).toLocaleString() : "ASAP"}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span>{session.participants_count || 0} participants</span>
+                          </div>
+                        </div>
+                        <p className="text-xs sm:text-sm text-muted-foreground font-mono">ID: {session.meeting_id}</p>
+                      </div>
+                      <div className="flex items-center space-x-2 sm:space-x-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
+                        <button
+                          onClick={() => handleSendInvitation(session)}
+                          className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
+                        >
+                          <Send className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>Send</span>
+                        </button>
+                        <button
+                          onClick={() => window.open(session.meeting_url, "_blank")}
+                          className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
+                        >
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span>Join</span>
+                        </button>
+                        <button
+                          onClick={() => deleteSession(session.id)}
+                          className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-all duration-200 hover:scale-105"
+                        >
+                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : // History tab showing completed sessions with transcripts/summaries
+          completedSessions.length === 0 ? (
             <div className="p-8 sm:p-12 text-center">
-              <Video className="h-12 w-12 sm:h-16 sm:w-16 text-muted mx-auto mb-4" />
-              <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">No video sessions yet</h3>
-              <p className="text-muted-foreground mb-6 text-sm sm:text-base px-4">
-                Create your first video session to start interviewing candidates
+              <History className="h-12 w-12 sm:h-16 sm:w-16 text-muted mx-auto mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">No session history yet</h3>
+              <p className="text-muted-foreground text-sm sm:text-base px-4">
+                Completed sessions with transcripts and summaries will appear here
               </p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="btn-primary flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 mx-auto text-sm sm:text-base"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Create First Session</span>
-              </button>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {sessions.map((session) => (
+              {completedSessions.map((session) => (
                 <div key={session.id} className="p-4 sm:p-6 hover:bg-muted/50 transition-all duration-200">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                     <div className="flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
-                        <h3 className="text-base sm:text-lg font-medium text-foreground">{session.title}</h3>
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full w-fit ${getStatusColor(session.status)}`}
-                        >
-                          {session.status}
-                        </span>
-                      </div>
+                      <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">{session.title}</h3>
                       <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-muted-foreground mb-2">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span>{session.scheduled_at ? new Date(session.scheduled_at).toLocaleString() : "ASAP"}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span>{session.participants_count || 0} participants</span>
-                        </div>
+                        <span>{new Date(session.created_at).toLocaleString()}</span>
+                        {session.duration_seconds && (
+                          <span>
+                            Duration: {Math.floor(session.duration_seconds / 60)}m {session.duration_seconds % 60}s
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs sm:text-sm text-muted-foreground font-mono">ID: {session.meeting_id}</p>
-                    </div>
-                    <div className="flex items-center space-x-2 sm:space-x-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
-                      {session.status === "completed" && (
-                        <button
-                          onClick={() => handleViewSummary(session)}
-                          className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
-                          title="View session summary"
-                        >
-                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Summary</span>
-                        </button>
+                      {session.summary && (
+                        <div className="mt-2 p-3 bg-muted rounded-lg text-xs sm:text-sm text-foreground line-clamp-2">
+                          <p className="font-medium mb-1">Summary:</p>
+                          <p className="text-muted-foreground">{session.summary.substring(0, 150)}...</p>
+                        </div>
                       )}
-                      {session.status !== "completed" && (
-                        <>
-                          <button
-                            onClick={() => handleSendInvitation(session)}
-                            className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
-                          >
-                            <Send className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span>Send</span>
-                          </button>
-                          <button
-                            onClick={() => window.open(session.meeting_url, "_blank")}
-                            className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm"
-                          >
-                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span>Join</span>
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => deleteSession(session.id)}
-                        className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-all duration-200 hover:scale-105"
-                      >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </button>
                     </div>
+                    <button
+                      onClick={() => handleViewSummary(session)}
+                      className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm font-medium"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>View Full Summary</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -560,9 +618,9 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
                           className="h-4 w-4 text-primary focus:ring-primary border-border rounded bg-background"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">{application.applicant_name}</p>
+                          <p className="font-medium text-foreground truncate">{application.candidate_name}</p>
                           <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                            {application.applicant_email}
+                            {application.candidate_email}
                           </p>
                         </div>
                       </div>

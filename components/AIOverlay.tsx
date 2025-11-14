@@ -1,20 +1,13 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-import AIImage from "@/public/dices.png";
+import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import AIImage from '@/public/dices.png';
 
 const AIChatbot = dynamic(() => import('@/components/AIChatbot'), { ssr: false });
 
 export default function AIOverlay(): JSX.Element {
-  const pathname = usePathname();
-
-  // Hide the overlay on the landing page and any video conference routes
-  const isExcludedRoute = !!pathname && (pathname === "/" || pathname.startsWith("/video-call"));
-  if (isExcludedRoute) return <></>;
-
   const [isVisible, setVisible] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
 
@@ -40,11 +33,10 @@ export default function AIOverlay(): JSX.Element {
   };
 
   return (
-    <div className={"z-10000"}>
+    <>
       <button
         onClick={toggle}
         aria-expanded={isVisible}
-        style={{ zIndex: 100000 }}
         className={`
           fixed flex items-center justify-center rounded-full shadow-lg
           bottom-5 left-3 w-14 h-10 md:w-16 md:h-12
@@ -98,7 +90,7 @@ export default function AIOverlay(): JSX.Element {
           background: rgba(0,0,0,0);
           pointer-events: none;
           transition: background 200ms ease;
-          z-index: 99990;
+          z-index: 50;
         }
 
         .overlay-backdrop--visible {
@@ -110,7 +102,7 @@ export default function AIOverlay(): JSX.Element {
           position: fixed;
           right: 0.4rem;
           bottom: 0.4rem;
-          z-index: 100000;
+          z-index: 70;
           transform-origin: bottom right;
           transition: opacity 200ms cubic-bezier(0.22, 1, 0.36, 1),
                       transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -174,6 +166,6 @@ export default function AIOverlay(): JSX.Element {
           .ai-overlay__inner { max-height: 60vh; border-radius: 10px; }
         }
       `}</style>
-    </div>
+    </>
   );
 }

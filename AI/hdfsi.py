@@ -1,4 +1,4 @@
-# jwt_check.py
+s# jwt_check.py
 import jwt
 from cryptography.hazmat.primitives import serialization
 

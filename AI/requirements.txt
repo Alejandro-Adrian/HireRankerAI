@@ -1,4 +1,7 @@
 websockets
 numpy
 soundfile
+torch
 faster-whisper
+SpeechRecognition
+openai-whisper
