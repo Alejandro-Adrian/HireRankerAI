@@ -6,6 +6,7 @@ export interface UserPayload {
   id: string
   email: string
   verified: boolean
+  isGuest?: boolean // Add flag for guest users
 }
 
 // Simple base64url encoding/decoding functions
@@ -84,6 +85,7 @@ export async function verifyAuthToken(token: string): Promise<UserPayload | null
       id: payload.id,
       email: payload.email,
       verified: payload.verified,
+      isGuest: payload.isGuest, // Include isGuest flag in return
     }
   } catch {
     return null

@@ -143,12 +143,30 @@ export default function VideoCallPage() {
                     </button>
                   )}
                   {session.status === "active" && (
+<<<<<<< Updated upstream
                     <button
                       onClick={() => window.open(session.meeting_url, "_blank")}
                       className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
                     >
                       Join Session
                     </button>
+=======
+                    <>
+                      <button
+                        onClick={() => handleViewSummary(session)}
+                        className="w-full px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View Summary
+                      </button>
+                      <button
+                        onClick={() => window.open(session.meeting_url, "_blank")}
+                        className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                      >
+                        Join Session
+                      </button>
+                    </>
+>>>>>>> Stashed changes
                   )}
                   {session.status === "scheduled" && (
                     <button
@@ -199,7 +217,13 @@ export default function VideoCallPage() {
 
                 {!selectedSession.transcript && !selectedSession.summary && (
                   <p className="text-muted-foreground text-sm italic">
+<<<<<<< Updated upstream
                     No transcript or summary available yet. Check back soon!
+=======
+                    {selectedSession.status === "active"
+                      ? "Recording in progress. Check back after the session ends!"
+                      : "No transcript or summary available yet. Check back soon!"}
+>>>>>>> Stashed changes
                   </p>
                 )}
               </div>

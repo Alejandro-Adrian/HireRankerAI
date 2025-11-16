@@ -59,6 +59,25 @@ export default function Home() {
     }
   }
 
+  const handleGuestAccess = async () => {
+    try {
+      const response = await fetch("/api/auth/guest", {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUser(data.user)
+        setCurrentView("dashboard")
+      } else {
+        console.error("Guest access failed")
+      }
+    } catch (error) {
+      console.error("Guest access error:", error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-slate-900 dark:via-slate-800 dark:to-emerald-950 flex items-center justify-center">
@@ -294,6 +313,14 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      <button
+        onClick={handleGuestAccess}
+        className="fixed bottom-4 right-4 text-xs text-slate-400 hover:text-slate-300 opacity-10 hover:opacity-20 transition-all duration-300 font-mono py-2 px-3 border border-slate-600/20 rounded hover:border-slate-600/40 cursor-pointer z-50"
+        title="For developers testing"
+      >
+        → guest
+      </button>
     </div>
   )
 }

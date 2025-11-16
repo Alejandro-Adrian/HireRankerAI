@@ -9,6 +9,7 @@ import RankingBuilder from "./RankingBuilder"
 import ResultsDashboard from "./ResultsDashboard"
 import { VideoCallManager } from "./VideoCallManager"
 import NotificationCenter from "./NotificationCenter"
+import AIOverlay from "./AIOverlay" // Added AI Overlay component for chatbot
 import { useRouter } from 'next/navigation'
 
 interface DashboardProps {
@@ -814,6 +815,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
           </div>
         </div>
+
+        {/* AI Overlay */}
+        <AIOverlay />
       </div>
     </div>
   )

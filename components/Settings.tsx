@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from 'next/navigation'
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Eye, EyeOff, User, Shield, Palette, AlertTriangle, Mail, Lock, Trash2, Building, Sun, Moon, Monitor } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, User, Shield, Palette, AlertTriangle, Mail, Lock, Trash2, Building, Sun, Moon, Monitor, Microscope } from 'lucide-react'
 import { createClient } from "@/lib/supabase/client"
 
 // Define the SettingsProps interface
@@ -43,9 +44,26 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
   const [verificationCode, setVerificationCode] = useState("")
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const router = useRouter()
+  const [isGuest, setIsGuest] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    const checkIfGuest = async () => {
+      try {
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setIsGuest(data.user?.isGuest === true)
+        }
+      } catch (error) {
+        console.error("Failed to check guest status:", error)
+      }
+    }
+    checkIfGuest()
   }, [])
 
   // Load user profile
@@ -455,134 +473,147 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                   Change Password
                 </CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Update your password to keep your account secure
+                  {isGuest 
+                    ? "Guest users cannot change passwords" 
+                    : "Update your password to keep your account secure"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {passwordChangeStep === "form" ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password" className="text-foreground">
-                        Current Password
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="current-password"
-                          type={showCurrentPassword ? "text" : "password"}
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
-                          placeholder="Enter current password"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        >
-                          {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="new-password" className="text-foreground">
-                          New Password
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="new-password"
-                            type={showNewPassword ? "text" : "password"}
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
-                            placeholder="Enter new password"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
-                            onClick={() => setShowNewPassword(!showNewPassword)}
-                          >
-                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm-password" className="text-foreground">
-                          Confirm New Password
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="confirm-password"
-                            type={showConfirmPassword ? "text" : "password"}
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
-                            placeholder="Confirm new password"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          >
-                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
-                      <Mail className="w-4 h-4" />
-                      <AlertDescription>
-                        For security, we'll send a verification code to your email before changing your password.
-                      </AlertDescription>
-                    </Alert>
-                    <Button
-                      onClick={sendPasswordChangeCode}
-                      disabled={loading}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:scale-105"
-                    >
-                      {loading ? "Sending..." : "Send Verification Code"}
-                    </Button>
-                  </>
+                {isGuest ? (
+                  <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                    <AlertTriangle className="w-4 h-4" />
+                    <AlertDescription>
+                      Guest users do not have passwords. To set a password, please create a regular account.
+                    </AlertDescription>
+                  </Alert>
                 ) : (
                   <>
-                    <div className="space-y-2">
-                      <Label htmlFor="verification-code" className="text-foreground">
-                        Verification Code
-                      </Label>
-                      <Input
-                        id="verification-code"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300"
-                        placeholder="Enter 6-digit code from email"
-                        maxLength={6}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={changePassword}
-                        disabled={loading}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:scale-105"
-                      >
-                        {loading ? "Changing..." : "Change Password"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setPasswordChangeStep("form")
-                          setVerificationCode("")
-                        }}
-                        className="border-border text-foreground hover:bg-muted transition-all duration-300"
-                      >
-                        Back
-                      </Button>
-                    </div>
+                    {passwordChangeStep === "form" ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="current-password" className="text-foreground">
+                            Current Password
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="current-password"
+                              type={showCurrentPassword ? "text" : "password"}
+                              value={currentPassword}
+                              onChange={(e) => setCurrentPassword(e.target.value)}
+                              className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
+                              placeholder="Enter current password"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            >
+                              {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-password" className="text-foreground">
+                              New Password
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="new-password"
+                                type={showNewPassword ? "text" : "password"}
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
+                                placeholder="Enter new password"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                              >
+                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="confirm-password" className="text-foreground">
+                              Confirm New Password
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="confirm-password"
+                                type={showConfirmPassword ? "text" : "password"}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300 pr-10"
+                                placeholder="Confirm new password"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              >
+                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                          <Mail className="w-4 h-4" />
+                          <AlertDescription>
+                            For security, we'll send a verification code to your email before changing your password.
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          onClick={sendPasswordChangeCode}
+                          disabled={loading}
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:scale-105"
+                        >
+                          {loading ? "Sending..." : "Send Verification Code"}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="verification-code" className="text-foreground">
+                            Verification Code
+                          </Label>
+                          <Input
+                            id="verification-code"
+                            value={verificationCode}
+                            onChange={(e) => setVerificationCode(e.target.value)}
+                            className="bg-muted border-border text-foreground focus:border-primary transition-all duration-300"
+                            placeholder="Enter 6-digit code from email"
+                            maxLength={6}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={changePassword}
+                            disabled={loading}
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300 hover:scale-105"
+                          >
+                            {loading ? "Changing..." : "Change Password"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setPasswordChangeStep("form")
+                              setVerificationCode("")
+                            }}
+                            className="border-border text-foreground hover:bg-muted transition-all duration-300"
+                          >
+                            Back
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </CardContent>
@@ -669,6 +700,22 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                         : "Dark mode is active. The interface will use dark colors."}
                   </AlertDescription>
                 </Alert>
+
+                {/* Testing Section */}
+                <div className="space-y-4 pt-6 border-t border-border">
+                  <Label className="text-foreground text-base font-semibold flex items-center gap-2">
+                    <Microscope className="w-5 h-5" />
+                    Testing
+                  </Label>
+                  <p className="text-sm text-muted-foreground">Access testing and development tools</p>
+                  <Button
+                    onClick={() => router.push("/test-assemblyai")}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white transition-all duration-300 hover:scale-105 w-full sm:w-auto"
+                  >
+                    <Microscope className="w-4 h-4 mr-2" />
+                    Go to Test Page
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -682,98 +729,111 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                   Delete Account
                 </CardTitle>
                 <CardDescription className="text-destructive/70">
-                  Permanently delete your account and all associated data
+                  {isGuest 
+                    ? "Guest accounts cannot be deleted" 
+                    : "Permanently delete your account and all associated data"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Alert className="border-destructive/30 bg-destructive/10 text-destructive">
-                  <AlertTriangle className="w-4 h-4" />
-                  <AlertDescription>
-                    <strong>Warning:</strong> This action cannot be undone. This will permanently delete your account
-                    and remove all data including:
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>All your rankings and job postings</li>
-                      <li>Candidate applications and data</li>
-                      <li>Interview records and notes</li>
-                      <li>Account settings and preferences</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-
-                {deleteStep === "form" ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="delete-password" className="text-foreground">
-                        Confirm Password
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="delete-password"
-                          type={showDeletePassword ? "text" : "password"}
-                          value={deletePassword}
-                          onChange={(e) => setDeletePassword(e.target.value)}
-                          className="bg-muted border-border text-foreground focus:border-destructive transition-all duration-300 pr-10"
-                          placeholder="Enter your password to confirm"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowDeletePassword(!showDeletePassword)}
-                        >
-                          {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                    <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
-                      <Mail className="w-4 h-4" />
-                      <AlertDescription>We'll send a verification code to confirm account deletion.</AlertDescription>
-                    </Alert>
-                    <Button
-                      onClick={sendDeleteCode}
-                      disabled={loading}
-                      variant="destructive"
-                      className="bg-destructive hover:bg-destructive/90 transition-all duration-300 hover:scale-105"
-                    >
-                      {loading ? "Sending..." : "Send Verification Code"}
-                    </Button>
-                  </>
+                {isGuest ? (
+                  <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                    <AlertTriangle className="w-4 h-4" />
+                    <AlertDescription>
+                      Guest accounts are temporary and do not require deletion. Simply close your browser to end your session.
+                    </AlertDescription>
+                  </Alert>
                 ) : (
                   <>
-                    <div className="space-y-2">
-                      <Label htmlFor="delete-verification-code" className="text-foreground">
-                        Verification Code
-                      </Label>
-                      <Input
-                        id="delete-verification-code"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        className="bg-muted border-border text-foreground focus:border-destructive transition-all duration-300"
-                        placeholder="Enter 6-digit code from email"
-                        maxLength={6}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={deleteAccount}
-                        disabled={loading}
-                        variant="destructive"
-                        className="bg-destructive hover:bg-destructive/90 transition-all duration-300 hover:scale-105"
-                      >
-                        {loading ? "Deleting..." : "Delete Account"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setDeleteStep("form")
-                          setVerificationCode("")
-                        }}
-                        className="border-border text-foreground hover:bg-muted transition-all duration-300"
-                      >
-                        Back
-                      </Button>
-                    </div>
+                    <Alert className="border-destructive/30 bg-destructive/10 text-destructive">
+                      <AlertTriangle className="w-4 h-4" />
+                      <AlertDescription>
+                        <strong>Warning:</strong> This action cannot be undone. This will permanently delete your account
+                        and remove all data including:
+                        <ul className="list-disc list-inside mt-2 space-y-1">
+                          <li>All your rankings and job postings</li>
+                          <li>Candidate applications and data</li>
+                          <li>Interview records and notes</li>
+                          <li>Account settings and preferences</li>
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
+
+                    {deleteStep === "form" ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="delete-password" className="text-foreground">
+                            Confirm Password
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="delete-password"
+                              type={showDeletePassword ? "text" : "password"}
+                              value={deletePassword}
+                              onChange={(e) => setDeletePassword(e.target.value)}
+                              className="bg-muted border-border text-foreground focus:border-destructive transition-all duration-300 pr-10"
+                              placeholder="Enter your password to confirm"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowDeletePassword(!showDeletePassword)}
+                            >
+                              {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                        <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                          <Mail className="w-4 h-4" />
+                          <AlertDescription>We'll send a verification code to confirm account deletion.</AlertDescription>
+                        </Alert>
+                        <Button
+                          onClick={sendDeleteCode}
+                          disabled={loading}
+                          variant="destructive"
+                          className="bg-destructive hover:bg-destructive/90 transition-all duration-300 hover:scale-105"
+                        >
+                          {loading ? "Sending..." : "Send Verification Code"}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="delete-verification-code" className="text-foreground">
+                            Verification Code
+                          </Label>
+                          <Input
+                            id="delete-verification-code"
+                            value={verificationCode}
+                            onChange={(e) => setVerificationCode(e.target.value)}
+                            className="bg-muted border-border text-foreground focus:border-destructive transition-all duration-300"
+                            placeholder="Enter 6-digit code from email"
+                            maxLength={6}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={deleteAccount}
+                            disabled={loading}
+                            variant="destructive"
+                            className="bg-destructive hover:bg-destructive/90 transition-all duration-300 hover:scale-105"
+                          >
+                            {loading ? "Deleting..." : "Delete Account"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setDeleteStep("form")
+                              setVerificationCode("")
+                            }}
+                            className="border-border text-foreground hover:bg-muted transition-all duration-300"
+                          >
+                            Back
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </CardContent>

@@ -1,9 +1,10 @@
 "use client"
-import { Video, Calendar, Users, Send, Plus, Eye, Trash2, ArrowLeft, History } from "lucide-react"
+import { Video, Calendar, Users, Send, Plus, Eye, Trash2, ArrowLeft, History } from 'lucide-react'
 import { useState, useEffect } from "react"
 import { revalidateVideoSessions } from "@/app/actions/video-sessions"
 import SuccessModal from "./SuccessModal"
 import SessionSummaryModal from "./SessionSummaryModal"
+import SessionDetailCard from "./SessionDetailCard" // Import the new SessionDetailCard component
 
 interface VideoCallManagerProps {
   rankings: any[]
@@ -315,7 +316,34 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
     setShowSummaryModal(true)
   }
 
-  const completedSessions = sessions.filter((s) => s.status === "completed" && (s.transcript || s.summary))
+  const handleDeleteAllHistory = async () => {
+    if (!confirm("Are you sure you want to delete ALL completed sessions? This action cannot be undone.")) return
+
+    try {
+      const deletePromises = completedSessions.map((session) =>
+        fetch(`/api/video-sessions/${session.id}`, { method: "DELETE" })
+      )
+
+      const results = await Promise.all(deletePromises)
+      const allSuccessful = results.every((r) => r.ok)
+
+      if (allSuccessful) {
+        setSuccessMessage({
+          title: "History Cleared!",
+          message: `All ${completedSessions.length} completed session${completedSessions.length !== 1 ? "s have" : " has"} been deleted.`,
+        })
+        setShowSuccessModal(true)
+        setSessions(sessions.filter((s) => s.status !== "completed"))
+      } else {
+        onNotification("Failed to delete some sessions", "error")
+      }
+    } catch (error) {
+      console.error("Error deleting all history:", error)
+      onNotification("Error clearing history", "error")
+    }
+  }
+
+  const completedSessions = sessions.filter((s) => s.status === "completed")
   const activeSessions = sessions.filter((s) => s.status !== "completed")
 
   return (
@@ -376,6 +404,16 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
                 History ({completedSessions.length})
               </span>
             </button>
+            {activeView === "history" && completedSessions.length > 0 && (
+              <button
+                onClick={handleDeleteAllHistory}
+                className="ml-auto px-3 py-2 text-xs sm:text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-all duration-200 hover:scale-105 flex items-center gap-1"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Delete All</span>
+                <span className="sm:hidden">Delete</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -474,36 +512,13 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="p-4 sm:p-6 space-y-4">
               {completedSessions.map((session) => (
-                <div key={session.id} className="p-4 sm:p-6 hover:bg-muted/50 transition-all duration-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                    <div className="flex-1">
-                      <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">{session.title}</h3>
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-muted-foreground mb-2">
-                        <span>{new Date(session.created_at).toLocaleString()}</span>
-                        {session.duration_seconds && (
-                          <span>
-                            Duration: {Math.floor(session.duration_seconds / 60)}m {session.duration_seconds % 60}s
-                          </span>
-                        )}
-                      </div>
-                      {session.summary && (
-                        <div className="mt-2 p-3 bg-muted rounded-lg text-xs sm:text-sm text-foreground line-clamp-2">
-                          <p className="font-medium mb-1">Summary:</p>
-                          <p className="text-muted-foreground">{session.summary.substring(0, 150)}...</p>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleViewSummary(session)}
-                      className="flex-1 sm:flex-none flex items-center justify-center space-x-1 px-3 py-2 text-primary hover:bg-primary/10 rounded-lg transition-all duration-200 hover:scale-105 text-sm font-medium"
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span>View Full Summary</span>
-                    </button>
-                  </div>
-                </div>
+                <SessionDetailCard
+                  key={session.id}
+                  session={session}
+                  onRefresh={refreshSessions}
+                />
               ))}
             </div>
           )}

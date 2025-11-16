@@ -56,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const { id } = params
     const body = await request.json()
 
-    const { status, ended_at, duration_seconds, transcript, summary } = body
+    const { status, ended_at, duration_seconds, transcript, summary, recording_url } = body
 
     const updateData: any = {}
     if (status) updateData.status = status
@@ -64,27 +64,38 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (duration_seconds !== undefined) updateData.duration_seconds = duration_seconds
     if (transcript) updateData.transcript = transcript
     if (summary) updateData.summary = summary
+    if (recording_url) updateData.recording_url = recording_url
+
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 })
     }
 
     updateData.updated_at = new Date().toISOString()
 
-    const { data, error } = await supabase
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    
+    let query = supabase
       .from("video_sessions")
       .update(updateData)
-      .eq("meeting_id", id)
-      .select()
-      .single()
+    
+    if (isUUID) {
+      query = query.eq("id", id)
+    } else {
+      query = query.eq("meeting_id", id)
+    }
+
+    const { data, error } = await query.select().single()
 
     if (error) {
-      console.error("Database error:", error)
-      return NextResponse.json({ error: "Failed to update session" }, { status: 500 })
+      console.error("[v0] Database error on PATCH:", error, "for id:", id)
+      return NextResponse.json({ error: "Failed to update session", details: error.message }, { status: 500 })
     }
+
+    console.log("[v0] Session patched successfully:", id, "with data:", Object.keys(updateData))
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("Error updating session:", error)
+    console.error("[v0] Error updating session:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
