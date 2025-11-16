@@ -1,7 +1,7 @@
 "use client"
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Phone, Copy, AlertCircle } from 'lucide-react'
+import { Loader2, Phone, Copy, AlertCircle, CheckCircle } from 'lucide-react'
 import { LiveTranscription } from "@/components/LiveTranscription"
 
 export default function VideoCallPage() {
@@ -32,8 +32,20 @@ export default function VideoCallPage() {
   const startRecording = async () => {
     try {
       setRecordingError(null)
-      console.log("[v0] Requesting microphone access...")
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      console.log("[v0] Requesting audio stream with all tracks...")
+      
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: false,
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        }
+      }).catch(() => {
+        // If display media fails, fallback to getUserMedia for single-direction audio
+        return navigator.mediaDevices.getUserMedia({ audio: true })
+      })
+      
       streamRef.current = stream
       
       console.log("[v0] Audio stream obtained, track count:", stream.getAudioTracks().length)
@@ -124,16 +136,13 @@ export default function VideoCallPage() {
 
   const handleEndCall = async () => {
     try {
-      console.log("[v0] handleEndCall triggered")
+      console.log("[v0] handleEndCall triggered, role:", role)
 
       // Stop recording FIRST before ending call
       if (isRecording) {
         console.log("[v0] Stopping recording before ending call...")
         await stopRecording()
         console.log("[v0] Recording stopped")
-        
-        // Give a moment for the transcription to start
-        await new Promise(resolve => setTimeout(resolve, 500))
       }
 
       if (meetingRef.current && typeof meetingRef.current.end === "function") {
@@ -171,12 +180,21 @@ export default function VideoCallPage() {
         console.error("[v0] Failed to update session:", updateResponse.status)
       }
 
-      setShowCompletionMessage(true)
-      setTimeout(() => router.push("/dashboard"), 2500)
+      if (role === "host") {
+        console.log("[v0] Host ending call - redirecting to dashboard immediately")
+        setShowCompletionMessage(true)
+        setTimeout(() => router.push("/dashboard"), 1500)
+      } else {
+        console.log("[v0] Participant ending call - showing thank you page")
+        setShowCompletionMessage(true)
+        // Participant stays on thank you page, doesn't auto-redirect
+      }
     } catch (err) {
       console.error("[v0] Error ending call:", err)
       setShowCompletionMessage(true)
-      setTimeout(() => router.push("/dashboard"), 2500)
+      if (role === "host") {
+        setTimeout(() => router.push("/dashboard"), 1500)
+      }
     }
   }
 
@@ -374,16 +392,35 @@ export default function VideoCallPage() {
       {showCompletionMessage && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="text-center">
-            <div className="mb-4 flex justify-center">
-              <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 p-4">
-                <svg className="h-8 w-8 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Call Ended</h2>
-            <p className="text-gray-300 mb-4">Your session recording is being processed</p>
-            <p className="text-sm text-gray-400">Transcription and summary will be ready shortly...</p>
+            {role === "host" ? (
+              <>
+                <div className="mb-4 flex justify-center">
+                  <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 p-4">
+                    <CheckCircle className="h-8 w-8 text-emerald-600" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Call Ended</h2>
+                <p className="text-gray-300 mb-4">Returning to dashboard...</p>
+                <p className="text-sm text-gray-400">Your session recording is being processed in the background</p>
+              </>
+            ) : (
+              <>
+                <div className="mb-4 flex justify-center">
+                  <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 p-4">
+                    <CheckCircle className="h-8 w-8 text-emerald-600" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Thank You!</h2>
+                <p className="text-gray-300 mb-4">Your interview has been completed successfully</p>
+                <p className="text-sm text-gray-400">We appreciate your time and effort. Our team will review your responses shortly.</p>
+                <button
+                  onClick={() => router.push("/")}
+                  className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                >
+                  Return to Home
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
