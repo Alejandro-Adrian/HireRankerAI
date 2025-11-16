@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireRankerAI - System Architecture Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        nav {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        section {
+            margin-bottom: 50px;
+            scroll-margin-top: 100px;
+        }
+
+        h2 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        h4 {
+            color: #555;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .flow-diagram {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+
+        .flow-item {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .flow-arrow {
+            color: #667eea;
+            margin: 0 15px;
+            font-size: 1.3em;
+        }
+
+        .component-card {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .component-card h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+
+        .api-route {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .api-method {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-right: 10px;
+        }
+
+        .api-get { background: #90caf9; color: white; }
+        .api-post { background: #81c784; color: white; }
+        .api-put { background: #ffa726; color: white; }
+        .api-delete { background: #f44336; color: white; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .dependency-tag {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin: 3px 3px 3px 0;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #0c5460;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #0c5460;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #155724;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            nav {
+                padding: 15px 20px;
+            }
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .expandable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .expandable::before {
+            content: "▶ ";
+            display: inline-block;
+            margin-right: 5px;
+            transition: transform 0.3s;
+        }
+
+        .expandable.expanded::before {
+            transform: rotate(90deg);
+        }
+
+        .expandable-content {
+            display: none;
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .expandable.expanded + .expandable-content {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 HireRankerAI System Architecture</h1>
+            <p>Complete Documentation of System Flow, Components, APIs, and Dependencies</p>
+        </header>
+
+        <nav>
+            <a href="#overview">Overview</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#tech-stack">Tech Stack</a>
+            <a href="#flow">System Flow</a>
+            <a href="#apis">API Routes</a>
+            <a href="#database">Database</a>
+            <a href="#dependencies">Dependencies</a>
+            <a href="#integrations">Integrations</a>
+            <a href="#files">Key Files</a>
+        </nav>
+
+        <div class="content">
+            <!-- OVERVIEW SECTION -->
+            <section id="overview">
+                <h2>📋 System Overview</h2>
+                
+                <p>HireRankerAI is a revolutionary AI-powered hiring platform that revolutionizes recruitment through intelligent candidate ranking, video interviews, and automated workflows. The system combines modern web technologies with AI/ML capabilities to streamline the entire hiring process.</p>
+
+                <div class="grid-3">
+                    <div class="stat-card">
+                        <div class="number">150+</div>
+                        <div class="label">API Routes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">15+</div>
+                        <div class="label">Integrations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">5+</div>
+                        <div class="label">External Services</div>
+                    </div>
+                </div>
+
+                <h3>Core Features</h3>
+                <ul style="margin-left: 20px; margin-top: 15px;">
+                    <li><strong>AI-Powered Ranking:</strong> Intelligent candidate scoring based on resume analysis and interview performance</li>
+                    <li><strong>Video Interviews:</strong> Real-time video call system with automatic transcription and recording</li>
+                    <li><strong>Resume Parsing:</strong> OCR-based document analysis with intelligent extraction</li>
+                    <li><strong>Email Notifications:</strong> Automated email system for candidate communication</li>
+                    <li><strong>Analytics Dashboard:</strong> Real-time analytics and candidate insights</li>
+                    <li><strong>User Management:</strong> Secure authentication with email verification</li>
+                </ul>
+            </section>
+
+            <!-- ARCHITECTURE SECTION -->
+            <section id="architecture">
+                <h2>🏗️ System Architecture</h2>
+
+                <h3>Architecture Overview</h3>
+                <div class="info">
+                    <strong>Architecture Pattern:</strong> Next.js 14 App Router with Server Components, Client Components, Route Handlers, and Server Actions
+                </div>
+
+                <div class="flow-diagram">
+                    <div class="flow-item">
+                        <strong>Frontend (React)</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Next.js API Routes</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>External Services</strong>
+                    </div>
+                    <div style="margin-left: 20px; margin-top: 15px;">
+                        ↓
+                    </div>
+                    <div class="flow-item" style="margin-left: 20px;">
+                        <strong>Supabase PostgreSQL Database</strong>
+                    </div>
+                    <div style="margin-left: 20px;">
+                        ↓
+                    </div>
+                    <div class="flow-item" style="margin-left: 20px;">
+                        <strong>Background Processing (Transcription, AI Analysis)</strong>
+                    </div>
+                </div>
+
+                <h3>Component Structure</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Layer</th>
+                            <th>Description</th>
+                            <th>Technologies</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Frontend</strong></td>
+                            <td>React components with Tailwind CSS styling</td>
+                            <td>React 18, TypeScript, Tailwind CSS, Radix UI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>API Layer</strong></td>
+                            <td>Next.js Route Handlers for REST endpoints</td>
+                            <td>Next.js 14 (App Router), TypeScript</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database</strong></td>
+                            <td>PostgreSQL with real-time capabilities</td>
+                            <td>Supabase (PostgreSQL), Row-Level Security</td>
+                        </tr>
+                        <tr>
+                            <td><strong>AI/ML</strong></td>
+                            <td>AI model integration for analysis</td>
+                            <td>Grok/XAI, Deepgram, AssemblyAI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Video</strong></td>
+                            <td>Real-time video communication</td>
+                            <td>VideoSDK.live, WebRTC, PeerJS</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- TECH STACK -->
+            <section id="tech-stack">
+                <h2>🛠️ Technology Stack</h2>
+
+                <h3>Frontend Framework & UI</h3>
+                <div class="component-card">
+                    <span class="dependency-tag">Next.js 14</span>
+                    <span class="dependency-tag">React 18</span>
+                    <span class="dependency-tag">TypeScript</span>
+                    <span class="dependency-tag">Tailwind CSS 3</span>
+                    <span class="dependency-tag">Radix UI</span>
+                    <span class="dependency-tag">shadcn/ui</span>
+                    <span class="dependency-tag">Lucide Icons</span>
+                </div>
+
+                <h3>Form & State Management</h3>
+                <div class="component-card">
+                    <span class="dependency-tag">React Hook Form</span>
+                    <span class="dependency-tag">Zod (Validation)</span>
+                    <span class="dependency-tag">Date-fns (Dates)</span>
+                    <span class="dependency-tag">UUID</span>
+                </div>
+
+                <h3>Backend & Database</h3>
+                <div class="component-card">
+                    <span class="dependency-tag">Supabase (PostgreSQL)</span>
+                    <span class="dependency-tag">@supabase/supabase-js</span>
+                    <span class="dependency-tag">@supabase/ssr</span>
+                    <span class="dependency-tag">Neon Database</span>
+                </div>
+
+                <h3>Video & Communication</h3>
+                <div class="component-card">
+                    <span class="dependency-tag">@videosdk.live/rtc-js-prebuilt</span>
+                    <span class="dependency-tag">PeerJS</span>
+                    <span class="dependency-tag">WebRTC</span>
+                </div>
+
+                <h3>AI & Speech Recognition</h3>
+                <div class="component-card">
+                    <span class="dependency-tag">AI SDK (Vercel)</span>
+                    <span class="dependency-tag">@ai-sdk/xai (Grok)</span>
+                    <span class="dependency-tag">@ai-sdk/deepgram</span>
+                    <span class="dependency-tag">Deepgram API</span>
+                    <span class="dependency-tag">AssemblyAI</span>
+                </div>
+
+                <h3>Email & Authentication</h3>
+                <div class="component-card">
+                    <span class="dependency-tag">Resend (Email)</span>
+                    <span class="dependency-tag">Nodemailer</span>
+                    <span class="dependency-tag">bcryptjs (Hashing)</span>
+                    <span class="dependency-tag">jsonwebtoken</span>
+                </div>
+
+                <h3>Storage & Utilities</h3>
+                <div class="component-card">
+                    <span class="dependency-tag">@vercel/blob (File Storage)</span>
+                    <span class="dependency-tag">Sonner (Toast)</span>
+                    <span class="dependency-tag">Next-themes (Dark Mode)</span>
+                    <span class="dependency-tag">Recharts (Charts)</span>
+                </div>
+            </section>
+
+            <!-- SYSTEM FLOW -->
+            <section id="flow">
+                <h2>🔄 System Flow Diagrams</h2>
+
+                <h3>1. User Registration & Login Flow</h3>
+                <div class="flow-diagram">
+                    <div class="flow-item">
+                        <strong>User Signs Up</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>API: /auth/signup</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Hash Password (bcryptjs)</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Store in Supabase</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Send Verification Email</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>User Verifies Email</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>JWT Token Created</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Cookie Set, Redirect to Dashboard</strong>
+                    </div>
+                </div>
+
+                <h3>2. Resume Upload & Parsing Flow</h3>
+                <div class="flow-diagram">
+                    <div class="flow-item">
+                        <strong>User Uploads Resume</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>API: /applications</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>File Uploaded to Blob Storage</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>OCR API Processes</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Extract Text & Data</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>AI Analysis (Grok)</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Store Application in Database</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Send Notification</strong>
+                    </div>
+                </div>
+
+                <h3>3. Video Interview Flow</h3>
+                <div class="flow-diagram">
+                    <div class="flow-item">
+                        <strong>Schedule Interview</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>API: /applications/[id]/schedule-interview</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Create Interview Session</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Generate VideoSDK Token</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Send Invitation Email</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Both Join Video Call</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Record Audio Stream</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>End Call</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Background: Transcribe & Analyze</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Store Results in Database</strong>
+                    </div>
+                </div>
+
+                <h3>4. Candidate Ranking Flow</h3>
+                <div class="flow-diagram">
+                    <div class="flow-item">
+                        <strong>Create Ranking</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>API: /rankings (POST)</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>AI Analysis</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Score All Applications</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Calculate Ranks</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Store Results</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Dashboard Display</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Export Analytics</strong>
+                    </div>
+                </div>
+
+                <h3>5. Transcription Processing Flow</h3>
+                <div class="flow-diagram">
+                    <div class="flow-item">
+                        <strong>Interview Ends</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>API: /transcription/end-session</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Audio Sent to Deepgram/AssemblyAI</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Transcription Generated</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>AI Summary (Grok)</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Store Results</strong>
+                    </div>
+                    <div class="flow-item">
+                        <strong>Feedback Stored</strong>
+                        <div class="flow-arrow">→</div>
+                        <strong>Notification Sent</strong>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API ROUTES -->
+            <section id="apis">
+                <h2>🔌 API Routes & Endpoints</h2>
+
+                <h3>Authentication Routes</h3>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/auth/signup</strong> - Register new user
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/auth/login</strong> - User login
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/auth/logout</strong> - User logout
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/auth/me</strong> - Get current user
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/auth/verify</strong> - Verify email
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/auth/forgot-password</strong> - Request password reset
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/auth/reset-password</strong> - Reset password
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/auth/guest</strong> - Guest access
+                </div>
+
+                <h3>Applications Routes</h3>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/applications</strong> - Submit application
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/applications</strong> - Get all applications
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/applications/[id]/schedule-interview</strong> - Schedule interview
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/applications/[id]/select-for-interview</strong> - Select for interview
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/applications/[id]/approve</strong> - Approve applicant
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/applications/[id]/reject</strong> - Reject applicant
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/applications/bulk-schedule-interview</strong> - Bulk schedule
+                </div>
+
+                <h3>Rankings Routes</h3>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/rankings</strong> - Create ranking
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/rankings</strong> - Get all rankings
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/rankings/[id]</strong> - Get ranking details
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/rankings/[id]/score-all</strong> - Score all candidates
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-delete">DELETE</span> <strong>/api/rankings/[id]</strong> - Delete ranking
+                </div>
+
+                <h3>Video & Interview Routes</h3>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/video-sdk/create-meeting</strong> - Create video meeting
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/video-sdk/create-token</strong> - Generate video token
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/video-call/check-access</strong> - Check call access
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/video-sessions</strong> - Get video sessions
+                </div>
+
+                <h3>Transcription Routes</h3>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/transcription/session</strong> - Create transcription session
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/transcription/end-session</strong> - End session & process
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/transcription/batch-video-session</strong> - Batch processing
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/deepgram/token</strong> - Get Deepgram token
+                </div>
+
+                <h3>AI Routes</h3>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/grok-chat</strong> - Chat with Grok AI
+                </div>
+
+                <h3>Analytics Routes</h3>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/analytics</strong> - Get analytics data
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/analytics/export</strong> - Export analytics
+                </div>
+
+                <h3>Notifications Routes</h3>
+                <div class="api-route">
+                    <span class="api-method api-get">GET</span> <strong>/api/notifications</strong> - Get notifications
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/notifications/[id]/read</strong> - Mark as read
+                </div>
+                <div class="api-route">
+                    <span class="api-method api-post">POST</span> <strong>/api/notifications/mark-all-read</strong> - Mark all as read
+                </div>
+            </section>
+
+            <!-- DATABASE -->
+            <section id="database">
+                <h2>💾 Database Schema (Supabase PostgreSQL)</h2>
+
+                <h3>Core Tables</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Table</th>
+                            <th>Purpose</th>
+                            <th>Key Columns</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>users</strong></td>
+                            <td>User accounts & authentication</td>
+                            <td>id, email, password_hash, is_verified, created_at</td>
+                        </tr>
+                        <tr>
+                            <td><strong>rankings</strong></td>
+                            <td>Job ranking records</td>
+                            <td>id, created_by, title, description, status, created_at</td>
+                        </tr>
+                        <tr>
+                            <td><strong>applications</strong></td>
+                            <td>Job applications</td>
+                            <td>id, ranking_id, applicant_name, email, resume_path, score, rank_position</td>
+                        </tr>
+                        <tr>
+                            <td><strong>interview_sessions</strong></td>
+                            <td>Video interview records</td>
+                            <td>id, application_id, meeting_id, status, start_time, end_time, recording_url</td>
+                        </tr>
+                        <tr>
+                            <td><strong>video_sessions</strong></td>
+                            <td>Video call sessions</td>
+                            <td>id, interview_id, duration, transcript, summary, feedback</td>
+                        </tr>
+                        <tr>
+                            <td><strong>application_files</strong></td>
+                            <td>Uploaded documents</td>
+                            <td>id, application_id, file_url, file_type, file_size</td>
+                        </tr>
+                        <tr>
+                            <td><strong>notifications</strong></td>
+                            <td>User notifications</td>
+                            <td>id, user_id, message, type, is_read, created_at</td>
+                        </tr>
+                        <tr>
+                            <td><strong>transcription_results</strong></td>
+                            <td>Interview transcriptions</td>
+                            <td>id, video_session_id, transcript_text, summary, keywords</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Database Features</h3>
+                <ul style="margin-left: 20px; margin-top: 15px;">
+                    <li><strong>Row-Level Security (RLS):</strong> Data access is controlled based on user roles</li>
+                    <li><strong>Real-time Subscriptions:</strong> Live updates for notifications and analytics</li>
+                    <li><strong>Full-Text Search:</strong> Search across applications and rankings</li>
+                    <li><strong>Indexes:</strong> Optimized queries for fast data retrieval</li>
+                    <li><strong>Relationships:</strong> Foreign keys ensure data integrity</li>
+                </ul>
+
+                <div class="info">
+                    <strong>Database URL:</strong> Set via environment variable <code>DATABASE_URL</code> or <code>SUPABASE_URL</code>
+                </div>
+            </section>
+
+            <!-- DEPENDENCIES -->
+            <section id="dependencies">
+                <h2>📦 All Dependencies & Their Purpose</h2>
+
+                <h3>Core Framework</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>next</td>
+                            <td>14.2.16</td>
+                            <td>React framework with App Router, SSR, and API routes</td>
+                        </tr>
+                        <tr>
+                            <td>react</td>
+                            <td>^18.3.1</td>
+                            <td>UI library for building components</td>
+                        </tr>
+                        <tr>
+                            <td>react-dom</td>
+                            <td>^18.3.1</td>
+                            <td>React rendering to DOM</td>
+                        </tr>
+                        <tr>
+                            <td>typescript</td>
+                            <td>^5.9.2</td>
+                            <td>Type safety for JavaScript</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>UI & Styling</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>tailwindcss</td>
+                            <td>^3.4.17</td>
+                            <td>Utility-first CSS framework</td>
+                        </tr>
+                        <tr>
+                            <td>tailwind-merge</td>
+                            <td>^2.6.0</td>
+                            <td>Merge Tailwind classes without conflicts</td>
+                        </tr>
+                        <tr>
+                            <td>class-variance-authority</td>
+                            <td>^0.7.1</td>
+                            <td>Component style variants</td>
+                        </tr>
+                        <tr>
+                            <td>lucide-react</td>
+                            <td>^0.454.0</td>
+                            <td>Icon library</td>
+                        </tr>
+                        <tr>
+                            <td>@radix-ui/*</td>
+                            <td>various</td>
+                            <td>Headless UI components</td>
+                        </tr>
+                        <tr>
+                            <td>next-themes</td>
+                            <td>^0.4.6</td>
+                            <td>Dark mode support</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Forms & Validation</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>react-hook-form</td>
+                            <td>^7.62.0</td>
+                            <td>Performant form management</td>
+                        </tr>
+                        <tr>
+                            <td>zod</td>
+                            <td>^3.25.76</td>
+                            <td>TypeScript-first schema validation</td>
+                        </tr>
+                        <tr>
+                            <td>@hookform/resolvers</td>
+                            <td>^3.10.0</td>
+                            <td>Integration between react-hook-form and zod</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Database & Auth</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@supabase/supabase-js</td>
+                            <td>2.45.4</td>
+                            <td>PostgreSQL database client</td>
+                        </tr>
+                        <tr>
+                            <td>@supabase/ssr</td>
+                            <td>0.5.1</td>
+                            <td>Server-side rendering support for Supabase</td>
+                        </tr>
+                        <tr>
+                            <td>bcryptjs</td>
+                            <td>^3.0.2</td>
+                            <td>Password hashing</td>
+                        </tr>
+                        <tr>
+                            <td>jsonwebtoken</td>
+                            <td>9.0.2</td>
+                            <td>JWT token creation & verification</td>
+                        </tr>
+                        <tr>
+                            <td>@neondatabase/serverless</td>
+                            <td>1.0.2</td>
+                            <td>Neon database connection</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Video & Real-time Communication</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@videosdk.live/rtc-js-prebuilt</td>
+                            <td>0.3.43</td>
+                            <td>Video conference framework</td>
+                        </tr>
+                        <tr>
+                            <td>peerjs</td>
+                            <td>^1.5.4</td>
+                            <td>WebRTC peer-to-peer communication</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>AI & Language Models</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ai</td>
+                            <td>5.0.87</td>
+                            <td>Vercel AI SDK for LLM integration</td>
+                        </tr>
+                        <tr>
+                            <td>@ai-sdk/xai</td>
+                            <td>2.0.33</td>
+                            <td>Grok/XAI model provider</td>
+                        </tr>
+                        <tr>
+                            <td>@ai-sdk/deepgram</td>
+                            <td>1.0.18</td>
+                            <td>Speech-to-text via Deepgram</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Email & Notifications</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>resend</td>
+                            <td>6.1.0</td>
+                            <td>Transactional email service</td>
+                        </tr>
+                        <tr>
+                            <td>nodemailer</td>
+                            <td>^7.0.5</td>
+                            <td>Email sending library</td>
+                        </tr>
+                        <tr>
+                            <td>@react-email/components</td>
+                            <td>^0.0.25</td>
+                            <td>Email templates in React</td>
+                        </tr>
+                        <tr>
+                            <td>@react-email/render</td>
+                            <td>^1.2.3</td>
+                            <td>Render React emails to HTML</td>
+                        </tr>
+                        <tr>
+                            <td>sonner</td>
+                            <td>^1.7.4</td>
+                            <td>Toast notifications</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Utilities & Storage</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Package</th>
+                            <th>Version</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@vercel/blob</td>
+                            <td>2.0.0</td>
+                            <td>File storage for resumes & documents</td>
+                        </tr>
+                        <tr>
+                            <td>uuid</td>
+                            <td>^13.0.0</td>
+                            <td>Generate unique identifiers</td>
+                        </tr>
+                        <tr>
+                            <td>date-fns</td>
+                            <td>^4.1.0</td>
+                            <td>Date utility library</td>
+                        </tr>
+                        <tr>
+                            <td>recharts</td>
+                            <td>^2.15.0</td>
+                            <td>Chart library for analytics</td>
+                        </tr>
+                        <tr>
+                            <td>dotenv</td>
+                            <td>17.2.2</td>
+                            <td>Environment variable management</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- INTEGRATIONS -->
+            <section id="integrations">
+                <h2>🔗 External Integrations & Services</h2>
+
+                <h3>1. Supabase (PostgreSQL Database)</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>Primary database for all application data, user management, and real-time subscriptions</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>NEXT_PUBLIC_SUPABASE_URL</code> - Supabase project URL</li>
+                        <li><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> - Anon API key for client</li>
+                        <li><code>SUPABASE_SERVICE_ROLE_KEY</code> - Service role key for server operations</li>
+                    </ul>
+                    <h4>Usage</h4>
+                    <p>Client: <code>createBrowserClient()</code> | Server: <code>createServerClient()</code></p>
+                </div>
+
+                <h3>2. Vercel Blob Storage</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>Cloud storage for resume files and interview recordings</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>BLOB_READ_WRITE_TOKEN</code> - Authentication token for blob storage</li>
+                    </ul>
+                    <h4>Buckets</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>application-files/</strong> - Resumes and documents</li>
+                        <li><strong>recordings/</strong> - Video interview recordings</li>
+                    </ul>
+                </div>
+
+                <h3>3. VideoSDK.live</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>Real-time video conference platform for conducting interviews</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>VIDEOSDK_API_KEY</code> - VideoSDK API key</li>
+                        <li><code>VIDEOSDK_SECRET</code> - VideoSDK secret for token generation</li>
+                    </ul>
+                    <h4>Endpoints</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>/api/video-sdk/create-meeting</code> - Create meeting</li>
+                        <li><code>/api/video-sdk/create-token</code> - Generate participant token</li>
+                    </ul>
+                </div>
+
+                <h3>4. Deepgram (Speech-to-Text)</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>Real-time speech recognition and audio transcription</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>DEEPGRAM_API_KEY</code> - API key for Deepgram service</li>
+                    </ul>
+                    <h4>Models</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>nova-2:</strong> Fast, accurate speech recognition</li>
+                    </ul>
+                </div>
+
+                <h3>5. AssemblyAI (Transcription)</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>Batch transcription of recorded interviews with speaker diarization</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>ASSEMBLYAI_API_KEY</code> - API key for AssemblyAI</li>
+                    </ul>
+                    <h4>Endpoints</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>https://api.assemblyai.com/v2/transcript - Submit transcription job</li>
+                    </ul>
+                </div>
+
+                <h3>6. Grok (XAI) - AI Analysis</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>AI-powered candidate analysis, interview summarization, and scoring</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>XAI_API_KEY</code> - XAI API key for Grok access</li>
+                    </ul>
+                    <h4>Model</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>grok-4:</strong> Latest Grok model for analysis</li>
+                    </ul>
+                    <h4>Use Cases</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Resume scoring and ranking</li>
+                        <li>Interview transcription summarization</li>
+                        <li>Candidate feedback generation</li>
+                        <li>Natural language queries on data</li>
+                    </ul>
+                </div>
+
+                <h3>7. Resend (Email Service)</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>Transactional email delivery for notifications and invitations</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>RESEND_API_KEY</code> - API key for Resend</li>
+                    </ul>
+                    <h4>Email Types</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Email verification</li>
+                        <li>Password reset</li>
+                        <li>Interview invitations</li>
+                        <li>Application status updates</li>
+                    </ul>
+                </div>
+
+                <h3>8. OCR API (Resume Parsing)</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>Extract text and structured data from uploaded resume files</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>OCR_API_KEY</code> - API key for OCR service</li>
+                    </ul>
+                </div>
+
+                <h3>9. Neon Database (Backup/Alternative)</h3>
+                <div class="component-card">
+                    <h4>Purpose</h4>
+                    <p>PostgreSQL database alternative for serverless operations</p>
+                    <h4>Configuration</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>POSTGRES_URL</code> - Database connection string</li>
+                        <li><code>POSTGRES_URL_NON_POOLING</code> - Non-pooling connection</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- KEY FILES -->
+            <section id="files">
+                <h2>📁 Key File Structure & Components</h2>
+
+                <h3>Project Directory Structure</h3>
+                <div class="code-block">
+hireranker-ai/
+├── app/
+│   ├── layout.tsx              # Root layout
+│   ├── page.tsx                # Home/login page
+│   ├── globals.css             # Global styles
+│   ├── api/                    # API route handlers
+│   │   ├── auth/              # Authentication routes
+│   │   ├── applications/      # Application management
+│   │   ├── rankings/          # Ranking routes
+│   │   ├── video-sdk/         # Video SDK setup
+│   │   ├── transcription/     # Transcription processing
+│   │   └── grok-chat/         # AI chat endpoints
+│   ├── video-call/[meetingId]/page.tsx  # Video interview page
+│   └── dashboard/page.tsx      # Main dashboard
+├── components/
+│   ├── VideoCallManager.tsx    # Video call component
+│   ├── Dashboard.tsx           # Dashboard layout
+│   ├── ApplicationForm.tsx     # Application submission
+│   ├── RankingManager.tsx      # Ranking interface
+│   └── ui/                     # shadcn UI components
+├── lib/
+│   ├── supabase/              # Supabase client setup
+│   │   ├── server.ts          # Server-side client
+│   │   └── client.ts          # Client-side client
+│   └── utils.ts               # Utility functions
+├── scripts/                    # Database migration scripts
+├── public/                     # Static files
+├── package.json               # Dependencies
+├── tsconfig.json              # TypeScript config
+└── next.config.mjs            # Next.js config
+                </div>
+
+                <h3>Key Component Files</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Purpose</th>
+                            <th>Key Dependencies</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>VideoCallManager.tsx</strong></td>
+                            <td>Manages video call interface and WebRTC connection</td>
+                            <td>VideoSDK, React, Lucide Icons</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dashboard.tsx</strong></td>
+                            <td>Main application dashboard for recruiters</td>
+                            <td>React, Recharts, React Hook Form</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ApplicationForm.tsx</strong></td>
+                            <td>Application submission form</td>
+                            <td>React Hook Form, Zod, Supabase</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RankingManager.tsx</strong></td>
+                            <td>Candidate ranking interface</td>
+                            <td>React, Recharts, Supabase</td>
+                        </tr>
+                        <tr>
+                            <td><strong>lib/supabase/server.ts</strong></td>
+                            <td>Server-side Supabase client initialization</td>
+                            <td>@supabase/ssr, next/headers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>lib/supabase/client.ts</strong></td>
+                            <td>Client-side Supabase client</td>
+                            <td>@supabase/supabase-js</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Key API Files</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>API Route</th>
+                            <th>File</th>
+                            <th>Main Functions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>/api/applications</strong></td>
+                            <td>applications/route.ts</td>
+                            <td>POST (submit), GET (list), file upload, parsing</td>
+                        </tr>
+                        <tr>
+                            <td><strong>/api/rankings</strong></td>
+                            <td>rankings/route.ts</td>
+                            <td>CREATE ranking, AI scoring, ranking calculations</td>
+                        </tr>
+                        <tr>
+                            <td><strong>/api/video-sdk/create-token</strong></td>
+                            <td>video-sdk/create-token/route.ts</td>
+                            <td>Generate VideoSDK JWT token</td>
+                        </tr>
+                        <tr>
+                            <td><strong>/api/transcription/end-session</strong></td>
+                            <td>transcription/end-session/route.ts</td>
+                            <td>Stop recording, process audio, send to Deepgram</td>
+                        </tr>
+                        <tr>
+                            <td><strong>/api/transcription/batch-video-session</strong></td>
+                            <td>transcription/batch-video-session/route.ts</td>
+                            <td>Batch transcription, AI summarization with Grok</td>
+                        </tr>
+                        <tr>
+                            <td><strong>/api/grok-chat</strong></td>
+                            <td>grok-chat/route.ts</td>
+                            <td>AI analysis with database context</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ENVIRONMENT VARIABLES -->
+            <section>
+                <h2>🔑 Environment Variables Reference</h2>
+
+                <h3>Required Environment Variables</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Service</th>
+                            <th>Purpose</th>
+                            <th>Scope</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>NEXT_PUBLIC_SUPABASE_URL</code></td>
+                            <td>Supabase</td>
+                            <td>Database URL</td>
+                            <td>Public (Client)</td>
+                        </tr>
+                        <tr>
+                            <td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td>
+                            <td>Supabase</td>
+                            <td>Public API key</td>
+                            <td>Public (Client)</td>
+                        </tr>
+                        <tr>
+                            <td><code>SUPABASE_SERVICE_ROLE_KEY</code></td>
+                            <td>Supabase</td>
+                            <td>Admin API key</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>SUPABASE_JWT_SECRET</code></td>
+                            <td>Supabase</td>
+                            <td>JWT signing key</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>BLOB_READ_WRITE_TOKEN</code></td>
+                            <td>Vercel Blob</td>
+                            <td>File storage token</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>DEEPGRAM_API_KEY</code></td>
+                            <td>Deepgram</td>
+                            <td>Speech-to-text API</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>ASSEMBLYAI_API_KEY</code></td>
+                            <td>AssemblyAI</td>
+                            <td>Transcription API</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>XAI_API_KEY</code></td>
+                            <td>XAI (Grok)</td>
+                            <td>AI model access</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>VIDEOSDK_API_KEY</code></td>
+                            <td>VideoSDK</td>
+                            <td>Video conference</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>VIDEOSDK_SECRET</code></td>
+                            <td>VideoSDK</td>
+                            <td>Video token signing</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>RESEND_API_KEY</code></td>
+                            <td>Resend</td>
+                            <td>Email delivery</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>OCR_API_KEY</code></td>
+                            <td>OCR</td>
+                            <td>Resume parsing</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>POSTGRES_URL</code></td>
+                            <td>Neon/Database</td>
+                            <td>DB connection string</td>
+                            <td>Secret (Server)</td>
+                        </tr>
+                        <tr>
+                            <td><code>NODE_ENV</code></td>
+                            <td>Node.js</td>
+                            <td>Environment (dev/prod)</td>
+                            <td>Public</td>
+                        </tr>
+                        <tr>
+                            <td><code>NEXT_PUBLIC_SITE_URL</code></td>
+                            <td>App</td>
+                            <td>Base URL for links</td>
+                            <td>Public (Client)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="warning">
+                    <strong>⚠️ Important:</strong> Never commit environment variables to version control. Use <code>.env.local</code> for development and Vercel project settings for production.
+                </div>
+            </section>
+
+            <!-- DEPLOYMENT & HOSTING -->
+            <section>
+                <h2>🚀 Deployment & Hosting</h2>
+
+                <h3>Hosting Platforms</h3>
+                <div class="component-card">
+                    <h4>Recommended: Vercel</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Official Next.js hosting platform</li>
+                        <li>Serverless functions for API routes</li>
+                        <li>Automatic SSL/TLS certificates</li>
+                        <li>Environment variable management</li>
+                        <li>Built-in analytics and monitoring</li>
+                    </ul>
+                </div>
+
+                <h3>Deployment Checklist</h3>
+                <ul style="margin-left: 20px; margin-top: 15px;">
+                    <li>✓ Set all environment variables in Vercel project settings</li>
+                    <li>✓ Configure database backups and replication</li>
+                    <li>✓ Enable HTTPS and security headers</li>
+                    <li>✓ Set up email service for production</li>
+                    <li>✓ Configure CDN for static assets</li>
+                    <li>✓ Set up monitoring and error tracking</li>
+                    <li>✓ Configure automated backups</li>
+                    <li>✓ Test video calling in production</li>
+                </ul>
+            </section>
+
+            <!-- FUTURE ENHANCEMENTS -->
+            <section>
+                <h2>💡 Future Enhancements & Scalability</h2>
+
+                <h3>Planned Features</h3>
+                <ul style="margin-left: 20px;">
+                    <li>Multiple interview formats (technical, behavioral, coding)</li>
+                    <li>Collaborative interview scoring</li>
+                    <li>Integration with ATS platforms</li>
+                    <li>Custom AI evaluation criteria</li>
+                    <li>Advanced analytics and reporting</li>
+                    <li>White-label solution options</li>
+                    <li>API for third-party integrations</li>
+                </ul>
+
+                <h3>Scalability Considerations</h3>
+                <ul style="margin-left: 20px;">
+                    <li>Database: Implement caching (Redis) for high-traffic scenarios</li>
+                    <li>Video Processing: Use job queues (Bull, RabbitMQ) for transcription</li>
+                    <li>Storage: Implement S3-compatible storage for large files</li>
+                    <li>API: Add rate limiting and request throttling</li>
+                    <li>Analytics: Implement data warehousing (BigQuery, Redshift)</li>
+                </ul>
+            </section>
+        </div>
+
+        <footer>
+            <p>HireRankerAI System Documentation | Last Updated: 2024 | Build with Next.js 14, React 18, and Supabase</p>
+        </footer>
+    </div>
+
+    <script>
+        // Add interactivity to expandable sections
+        document.querySelectorAll('.expandable').forEach(element => {
+            element.addEventListener('click', function() {
+                this.classList.toggle('expanded');
+            });
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const target = document.querySelector(link.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -57,21 +57,16 @@ export async function POST(request: NextRequest) {
         .select("id, title, status, created_at")
         .limit(5)
 
-      systemContext = `You are a helpful HR assistant for HireRankerAI. Answer concisely in 1-2 sentences max.
+      systemContext = `You are HireRankerAI's helpful HR assistant. Keep ALL responses under 2 sentences—be concise, clear, and actionable.
 
-AVAILABLE RANKINGS:
-${rankings?.map((r: any) => `- ${r.title} (Position: ${r.position}, Applications: ${r.applications_count})`).join("\n") || "No rankings yet"}
+RANKINGS: ${rankings?.map((r: any) => `${r.title} (${r.position})`).join(", ") || "None yet"}
+RECENT APPS: ${applications?.length || 0} candidates
+SESSIONS: ${sessions?.length || 0} interviews
 
-RECENT APPLICATIONS:
-${applications?.map((a: any) => `- ${a.candidate_name} for ${a.position} (Score: ${a.score}, Status: ${a.status})`).join("\n") || "No applications yet"}
-
-RECENT VIDEO SESSIONS:
-${sessions?.map((s: any) => `- ${s.title} (Status: ${s.status})`).join("\n") || "No sessions yet"}
-
-Help with recruitment, applications, and interviews. Keep responses brief and direct.`
+Answer briefly with specific steps when asked "how to". Use numbered lists only if 3+ steps. Suggest FAQ for complex questions.`
     } catch (dbError) {
       console.warn("[v0] Error fetching database context:", dbError)
-      systemContext = "You are a helpful HR assistant. Answer concisely in 1-2 sentences. Help with recruitment and interviews."
+      systemContext = "You are HireRankerAI's HR assistant. Keep responses under 2 sentences. Be clear and actionable."
     }
 
     // Prepare messages for Grok
@@ -87,19 +82,19 @@ Help with recruitment, applications, and interviews. Keep responses brief and di
       }),
       system: systemContext,
       messages,
-      temperature: 0.7,
-      maxTokens: 150, // Reduced from 500 for concise answers
+      temperature: 0.6, // Lower temp for consistency
+      maxTokens: 120, // Tighter token limit
     })
 
     return NextResponse.json({
       success: true,
-      response: response.slice(0, 150), // Truncate to 150 chars
+      response: response.trim().slice(0, 200), // Clean response
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error("[v0] Grok chat error:", error)
     return NextResponse.json(
-      { error: `Chat failed: ${error instanceof Error ? error.message : "Unknown error"}` },
+      { error: `Failed: ${error instanceof Error ? error.message : "Unknown error"}` },
       { status: 500 }
     )
   }
