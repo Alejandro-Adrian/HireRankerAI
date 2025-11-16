@@ -1,219 +1,116 @@
 "use client"
+import { useParams, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
-import { Loader2, Eye } from 'lucide-react'
-import VideoCallManager from "@/components/VideoCallManager"
-
-interface Session {
-  id: string
-  title: string
-  meeting_id: string
-  meeting_url: string
-  status: string
-  participants_count: number
-  created_at: string
-  scheduled_at?: string
-  transcript?: string
-  summary?: string
-  duration_seconds?: number
-  ended_at?: string
-}
 
 export default function VideoCallPage() {
-  const router = useRouter()
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null)
-  const [showManager, setShowManager] = useState(false)
+  const params = useParams()
+  const searchParams = useSearchParams()
+  const meetingId = params.meetingId as string
+  const role = searchParams.get("role") || "participant"
 
-  const fetchSessions = async () => {
-    try {
-      const response = await fetch(`/api/video-sessions?t=${Date.now()}`)
-      const data = await response.json()
-      setSessions(data || [])
-    } catch (err) {
-      console.error("Error fetching sessions:", err)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [roomUrl, setRoomUrl] = useState<string>("")
+  const [error, setError] = useState<string>("")
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchSessions()
-    // Poll for updates every 5 seconds
-    const interval = setInterval(fetchSessions, 5000)
-    return () => clearInterval(interval)
-  }, [])
+    const initializeRoom = async () => {
+      try {
+        const response = await fetch("/api/jitsi/rooms", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ meetingId, isHost: role === "host" }),
+        })
 
-  const handleViewSummary = (session: Session) => {
-    setSelectedSession(session)
-  }
+        const data = await response.json()
 
-  const handleCloseSummary = () => {
-    setSelectedSession(null)
-    fetchSessions()
-  }
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to create room")
+        }
 
-  if (showManager) {
-    return <VideoCallManager rankings={[]} onBack={() => setShowManager(false)} onNotification={() => {}} user={null} />
+        setRoomUrl(data.roomUrl)
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    initializeRoom()
+  }, [meetingId, role])
+
+  const copyMeetingLink = () => {
+    const participantLink = `${window.location.origin}/video-call/${meetingId}`
+    navigator.clipboard.writeText(participantLink)
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">Loading sessions...</h2>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold mb-2">Setting up your meeting...</h2>
+          <p className="text-gray-400">Please wait</p>
         </div>
-      </main>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="max-w-md w-full mx-4">
+          <div className="bg-red-900/50 border border-red-500 rounded-lg p-6 text-center">
+            <h2 className="text-xl font-semibold mb-4">Unable to join meeting</h2>
+            <p className="text-red-200 mb-6">{error}</p>
+            <button
+              onClick={() => (window.location.href = "/dashboard")}
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Video Call Sessions</h1>
-            <p className="text-muted-foreground">Manage and view your interview sessions</p>
-          </div>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700 flex-shrink-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg md:text-xl font-bold truncate">
+            Interview Session ({role === "host" ? "Host" : "Participant"})
+          </h1>
+          <p className="text-gray-400 text-xs md:text-sm truncate">Meeting ID: {meetingId}</p>
+        </div>
+        <div className="flex gap-2 ml-4">
+          {role === "host" && (
+            <button
+              onClick={copyMeetingLink}
+              className="px-3 py-2 md:px-4 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
+            >
+              Copy Link
+            </button>
+          )}
           <button
-            onClick={() => setShowManager(true)}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+            onClick={() => (window.location.href = "/dashboard")}
+            className="px-3 py-2 md:px-4 bg-red-600 hover:bg-red-700 rounded-lg transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
           >
-            Create Session
+            End Call
           </button>
         </div>
-
-        {sessions.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No video sessions yet</p>
-            <button
-              onClick={() => setShowManager(true)}
-              className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-            >
-              Create First Session
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="border border-border rounded-lg p-6 bg-card hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-1">{session.title}</h3>
-                    <span
-                      className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                        session.status === "completed"
-                          ? "bg-gray-100 text-black dark:text-gray-800"
-                          : session.status === "active"
-                            ? "bg-emerald-100 text-black dark:text-emerald-800"
-                            : "bg-blue-100 text-black dark:text-blue-800"
-                      }`}
-                    >
-                      {session.status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-sm text-black dark:text-muted-foreground mb-4">
-                  <p>
-                    <strong>Created:</strong> {new Date(session.created_at).toLocaleDateString()}
-                  </p>
-                  {session.duration_seconds && (
-                    <p>
-                      <strong>Duration:</strong> {Math.floor(session.duration_seconds / 60)}m{" "}
-                      {session.duration_seconds % 60}s
-                    </p>
-                  )}
-                  <p className="text-xs font-mono">ID: {session.meeting_id}</p>
-                </div>
-
-                <div className="space-y-2">
-                  {session.status === "completed" && (
-                    <button
-                      onClick={() => handleViewSummary(session)}
-                      className="w-full px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                    >
-                      <Eye className="h-4 w-4" />
-                      View Summary
-                    </button>
-                  )}
-                  {session.status === "active" && (
-                    <button
-                      onClick={() => window.open(session.meeting_url, "_blank")}
-                      className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-                    >
-                      Join Session
-                    </button>
-                  )}
-                  {session.status === "scheduled" && (
-                    <button
-                      onClick={() => window.open(session.meeting_url, "_blank")}
-                      className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-                    >
-                      Join Session
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {selectedSession && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-card rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto p-6 border border-border shadow-xl">
-              <h2 className="text-2xl font-bold text-foreground mb-4">{selectedSession.title} - Summary</h2>
-
-              <div className="space-y-4 mb-6">
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground mb-2">Duration</h3>
-                  <p className="text-muted-foreground">
-                    {selectedSession.duration_seconds
-                      ? `${Math.floor(selectedSession.duration_seconds / 60)} minutes ${selectedSession.duration_seconds % 60} seconds`
-                      : "N/A"}
-                  </p>
-                </div>
-
-                {selectedSession.transcript && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-2">Transcript</h3>
-                    <p className="text-muted-foreground text-sm bg-background p-3 rounded border border-border max-h-32 overflow-y-auto">
-                      {selectedSession.transcript}
-                    </p>
-                  </div>
-                )}
-
-                {selectedSession.summary && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-2">Summary</h3>
-                    <p className="text-muted-foreground text-sm bg-background p-3 rounded border border-border">
-                      {selectedSession.summary}
-                    </p>
-                  </div>
-                )}
-
-                {!selectedSession.transcript && !selectedSession.summary && (
-                  <p className="text-muted-foreground text-sm italic">
-                    No transcript or summary available yet. Check back soon!
-                  </p>
-                )}
-              </div>
-
-              <button
-                onClick={handleCloseSummary}
-                className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-    </main>
+
+      <div className="flex-1 relative bg-black">
+        <iframe
+          src={roomUrl}
+          className="absolute inset-0 w-full h-full"
+          style={{ border: "none" }}
+          allow="camera; microphone; fullscreen; speaker; display-capture; autoplay; clipboard-read; clipboard-write"
+          allowFullScreen
+          title="Video Conference"
+        />
+      </div>
+    </div>
   )
 }
