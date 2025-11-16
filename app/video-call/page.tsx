@@ -144,6 +144,7 @@ export default function VideoCallPage() {
                   )}
                   {session.status === "active" && (
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     <button
                       onClick={() => window.open(session.meeting_url, "_blank")}
                       className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
@@ -151,6 +152,8 @@ export default function VideoCallPage() {
                       Join Session
                     </button>
 =======
+=======
+>>>>>>> Stashed changes
                     <>
                       <button
                         onClick={() => handleViewSummary(session)}
@@ -166,6 +169,9 @@ export default function VideoCallPage() {
                         Join Session
                       </button>
                     </>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                   )}
                   {session.status === "scheduled" && (
@@ -218,7 +224,13 @@ export default function VideoCallPage() {
                 {!selectedSession.transcript && !selectedSession.summary && (
                   <p className="text-muted-foreground text-sm italic">
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     No transcript or summary available yet. Check back soon!
+=======
+                    {selectedSession.status === "active"
+                      ? "Recording in progress. Check back after the session ends!"
+                      : "No transcript or summary available yet. Check back soon!"}
+>>>>>>> Stashed changes
 =======
                     {selectedSession.status === "active"
                       ? "Recording in progress. Check back after the session ends!"
