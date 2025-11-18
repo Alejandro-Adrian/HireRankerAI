@@ -1,3 +1,5 @@
+import { WORLD_CITIES, INTERNATIONAL_NAMES } from "./world-data-reference"
+
 export interface ExtractedResumeData {
   name: string
   email: string
@@ -14,284 +16,9 @@ export class AdvancedOCRService {
   private readonly API_KEY = "K82009408488957"
   private readonly API_URL = "https://api.ocr.space/parse/image"
 
-  private readonly COMMON_FIRST_NAMES = new Set([
-    "james",
-    "robert",
-    "john",
-    "michael",
-    "david",
-    "william",
-    "richard",
-    "charles",
-    "joseph",
-    "thomas",
-    "christopher",
-    "daniel",
-    "paul",
-    "mark",
-    "donald",
-    "george",
-    "kenneth",
-    "steven",
-    "edward",
-    "brian",
-    "ronald",
-    "anthony",
-    "kevin",
-    "jason",
-    "matthew",
-    "gary",
-    "timothy",
-    "jose",
-    "larry",
-    "jeffrey",
-    "frank",
-    "scott",
-    "eric",
-    "stephen",
-    "andrew",
-    "raymond",
-    "gregory",
-    "joshua",
-    "jerry",
-    "dennis",
-    "walter",
-    "patrick",
-    "peter",
-    "harold",
-    "douglas",
-    "henry",
-    "carl",
-    "arthur",
-    "ryan",
-    "roger",
-    "mary",
-    "patricia",
-    "jennifer",
-    "linda",
-    "elizabeth",
-    "barbara",
-    "susan",
-    "jessica",
-    "sarah",
-    "karen",
-    "nancy",
-    "lisa",
-    "betty",
-    "helen",
-    "sandra",
-    "donna",
-    "carol",
-    "ruth",
-    "sharon",
-    "michelle",
-    "laura",
-    "sarah",
-    "kimberly",
-    "deborah",
-    "dorothy",
-    "lisa",
-    "nancy",
-    "karen",
-    "betty",
-    "helen",
-    "sandra",
-    "donna",
-    "carol",
-    "ruth",
-    "sharon",
-    "michelle",
-    "laura",
-    "emily",
-    "kimberly",
-    "deborah",
-    "amy",
-    "angela",
-    "ashley",
-    "brenda",
-    "emma",
-    "olivia",
-    "cynthia",
-    "marie",
-    "janet",
-    "catherine",
-  ])
-
-  private readonly COMMON_LAST_NAMES = new Set([
-    "smith",
-    "johnson",
-    "williams",
-    "brown",
-    "jones",
-    "garcia",
-    "miller",
-    "davis",
-    "rodriguez",
-    "martinez",
-    "hernandez",
-    "lopez",
-    "gonzalez",
-    "wilson",
-    "anderson",
-    "thomas",
-    "taylor",
-    "moore",
-    "jackson",
-    "martin",
-    "lee",
-    "perez",
-    "thompson",
-    "white",
-    "harris",
-    "sanchez",
-    "clark",
-    "ramirez",
-    "lewis",
-    "robinson",
-    "walker",
-    "young",
-    "allen",
-    "king",
-    "wright",
-    "scott",
-    "torres",
-    "nguyen",
-    "hill",
-    "flores",
-    "green",
-    "adams",
-    "nelson",
-    "baker",
-    "hall",
-    "rivera",
-    "campbell",
-    "mitchell",
-    "carter",
-    "roberts",
-  ])
-
-  private readonly CITIES_COUNTRIES = new Set([
-    "new york",
-    "los angeles",
-    "chicago",
-    "houston",
-    "phoenix",
-    "philadelphia",
-    "san antonio",
-    "san diego",
-    "dallas",
-    "san jose",
-    "austin",
-    "jacksonville",
-    "fort worth",
-    "columbus",
-    "charlotte",
-    "francisco",
-    "indianapolis",
-    "seattle",
-    "denver",
-    "washington",
-    "boston",
-    "el paso",
-    "detroit",
-    "nashville",
-    "portland",
-    "memphis",
-    "oklahoma city",
-    "las vegas",
-    "louisville",
-    "baltimore",
-    "milwaukee",
-    "albuquerque",
-    "tucson",
-    "fresno",
-    "sacramento",
-    "mesa",
-    "kansas city",
-    "atlanta",
-    "long beach",
-    "colorado springs",
-    "raleigh",
-    "miami",
-    "virginia beach",
-    "omaha",
-    "oakland",
-    "minneapolis",
-    "tulsa",
-    "arlington",
-    "united states",
-    "usa",
-    "canada",
-    "mexico",
-    "united kingdom",
-    "england",
-    "france",
-    "germany",
-    "italy",
-    "spain",
-    "australia",
-    "japan",
-    "china",
-    "india",
-    "brazil",
-    "russia",
-    "south africa",
-    "california",
-    "texas",
-    "florida",
-    "new york",
-    "pennsylvania",
-    "illinois",
-    "ohio",
-    "georgia",
-    "north carolina",
-    "michigan",
-    "new jersey",
-    "virginia",
-    "washington",
-    "arizona",
-    "massachusetts",
-    "tennessee",
-    "indiana",
-    "missouri",
-    "maryland",
-    "wisconsin",
-    "colorado",
-    "minnesota",
-    "south carolina",
-    "alabama",
-    "louisiana",
-    "kentucky",
-    "oregon",
-    "oklahoma",
-    "connecticut",
-    "utah",
-    "iowa",
-    "nevada",
-    "arkansas",
-    "mississippi",
-    "kansas",
-    "new mexico",
-    "nebraska",
-    "west virginia",
-    "idaho",
-    "hawaii",
-    "new hampshire",
-    "maine",
-    "montana",
-    "rhode island",
-    "delaware",
-    "south dakota",
-    "north dakota",
-    "alaska",
-    "vermont",
-    "wyoming",
-    "monica",
-    "culinary",
-    "helper",
-    "kingdom",
-    "paul",
-  ])
+  private readonly COMMON_FIRST_NAMES = INTERNATIONAL_NAMES.firstNames
+  private readonly COMMON_LAST_NAMES = INTERNATIONAL_NAMES.lastNames
+  private readonly CITIES_COUNTRIES = WORLD_CITIES
 
   private readonly JOB_TITLES = new Set([
     "kitchen helper",
@@ -826,7 +553,7 @@ export class AdvancedOCRService {
   }
 
   private extractName(text: string): string {
-    console.log("[v0] Starting enhanced name extraction")
+    console.log("[v0] Starting enhanced name extraction with world names database")
 
     const lines = text
       .split("\n")
@@ -845,21 +572,20 @@ export class AdvancedOCRService {
       const words = line.split(/\s+/).filter((word) => word.length > 1)
 
       for (let j = 0; j < words.length - 1; j++) {
-        const firstName = words[j].toLowerCase().replace(/[^a-z]/g, "")
-        const lastName = words[j + 1].toLowerCase().replace(/[^a-z]/g, "")
+        const firstName = words[j].toLowerCase().replace(/[^a-zäöüßàáâãçèéêëìíîïñòóôõùúûýÿ]/g, "")
+        const lastName = words[j + 1].toLowerCase().replace(/[^a-zäöüßàáâãçèéêëìíîïñòóôõùúûýÿ]/g, "")
 
         if (firstName.length < 2 || lastName.length < 2) continue
 
         const fullName = `${words[j]} ${words[j + 1]}`
         let score = 0
 
-        // Positive scoring for actual names
-        if (this.COMMON_FIRST_NAMES.has(firstName)) score += 50
-        if (this.COMMON_LAST_NAMES.has(lastName)) score += 50
+        if (this.COMMON_FIRST_NAMES.has(firstName)) score += 60
+        if (this.COMMON_LAST_NAMES.has(lastName)) score += 60
 
         // Bonus for proper capitalization
         if (words[j][0] === words[j][0].toUpperCase() && words[j + 1][0] === words[j + 1][0].toUpperCase()) {
-          score += 20
+          score += 25
         }
 
         // Bonus for being early in document
@@ -918,7 +644,7 @@ export class AdvancedOCRService {
       }
     }
 
-    console.log("[v0] No valid name found, using fallback")
+    console.log("[v0] No valid name found using world database")
     return "Name Not Found"
   }
 
@@ -1261,26 +987,50 @@ export class AdvancedOCRService {
   }
 
   private extractLocationAdvanced(text: string): string {
+    const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0)
+    
+    for (const line of lines.slice(0, 15)) {
+      const lower = line.toLowerCase()
+      
+      // Check against world cities database
+      for (const city of this.CITIES_COUNTRIES) {
+        if (lower.includes(city)) {
+          // Extract the full location context (city, state, country)
+          const cityIndex = lower.indexOf(city)
+          const contextStart = Math.max(0, cityIndex - 20)
+          const contextEnd = Math.min(line.length, cityIndex + city.length + 30)
+          const context = line.substring(contextStart, contextEnd).trim()
+          
+          // Clean up and return
+          const cleaned = context.replace(/^[^\w]+|[^\w]+$/g, '')
+          if (cleaned.length > 2 && cleaned.length < 100) {
+            console.log("[v0] Location detected from world database:", cleaned)
+            return cleaned
+          }
+        }
+      }
+    }
+
+    // Fallback to pattern matching
     const locationPatterns = [
-      /([A-Z][a-z]+(?:,\s*[A-Z]{2})?(?:\s+\d{5})?)/g, // City, ST ZIP or City, ST or City
-      /([A-Z][a-z]+,\s*[A-Z][a-z]+)/g, // City, State/Country
-      /([A-Z][a-z]+\s+[A-Z][a-z]+,\s*[A-Z]{2})/g, // City Name, ST
+      /([A-Z][a-z]+(?:,\s*[A-Z]{2})?(?:\s+\d{5})?)/g,
+      /([A-Z][a-z]+,\s*[A-Z][a-z]+)/g,
+      /([A-Z][a-z]+\s+[A-Z][a-z]+,\s*[A-Z]{2})/g,
     ]
 
-    // Combine patterns for better matching
-    const allPatterns = locationPatterns.flatMap((pattern) => {
+    for (const pattern of locationPatterns) {
       const matches = text.match(pattern) || []
-      return matches.map((match) => match.trim())
-    })
+      for (const match of matches) {
+        const lower = match.toLowerCase()
+        if (this.CITIES_COUNTRIES.has(lower.split(',')[0].trim())) {
+          console.log("[v0] Location detected via pattern matching:", match)
+          return match.trim()
+        }
+      }
+    }
 
-    // Filter out obvious non-locations and common words
-    const potentialLocations = allPatterns.filter((loc) =>
-      this.LOCATION_INDICATORS.some((indicator) => loc.toLowerCase().includes(indicator)),
-    )
-
-    // Deduplicate and return the first valid location found
-    const uniqueLocations = Array.from(new Set(potentialLocations))
-    return uniqueLocations.length > 0 ? uniqueLocations[0] : ""
+    console.log("[v0] No location detected")
+    return ""
   }
 
   private extractSkillsAdvanced(text: string): string[] {

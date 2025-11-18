@@ -72,14 +72,14 @@ export class DirectScoringService {
       const preferredSkills = SkillMatcher.matchSkills(resumeText, positionRef.skills.preferred)
       const bonusSkills = SkillMatcher.matchSkills(resumeText, positionRef.skills.bonus)
 
-      const baseSkillScore = 50 // Reduced from 55 to 50 for more moderate base scoring
+      const baseSkillScore = 45 // Reduced from 50 to 45 for more accurate base scoring
       const skillScore = Math.round(
         baseSkillScore +
           ((requiredSkills.score * SCORING_WEIGHTS.skills.required +
             preferredSkills.score * SCORING_WEIGHTS.skills.preferred +
             bonusSkills.score * SCORING_WEIGHTS.skills.bonus) /
             3) *
-            0.45 * // Reduced from 0.6 to 0.45 for less harsh scaling
+            0.5 * // Adjusted multiplier for better score distribution
             multipliers.skills,
       )
 
@@ -90,24 +90,19 @@ export class DirectScoringService {
         score: Math.min(100, skillScore),
         maxScore: 100,
         reasoning: `Found ${allSkillMatches.length} relevant skills: ${requiredSkills.matches.length} required, ${preferredSkills.matches.length} preferred, ${bonusSkills.matches.length} bonus`,
-        keywords: allSkillMatches,
+        keywords: allSkillMatches, // ONLY DETECTED SKILLS
       })
 
       const experienceMatch = SkillMatcher.matchExperience(resumeText, position)
-      let experienceScore = Math.max(40, experienceMatch.score * 100) // Reduced minimum from 45 to 40 points
+      let experienceScore = Math.max(40, experienceMatch.score * 100)
 
-      // Apply experience level weights with more generous scaling
       const experienceYears = application.experience_years || 0
       let yearMultiplier = 1.0
-      if (experienceYears >= 10)
-        yearMultiplier = 1.3 // Increased from 1.2 to 1.3
-      else if (experienceYears >= 5)
-        yearMultiplier = 1.15 // Increased from 1.1 to 1.15
-      else if (experienceYears >= 3)
-        yearMultiplier = 1.05 // Increased from 1.0 to 1.05
-      else if (experienceYears >= 1)
-        yearMultiplier = 0.95 // Increased from 0.9 to 0.95
-      else yearMultiplier = 0.85 // Increased from 0.8 to 0.85 - less harsh for entry level
+      if (experienceYears >= 10) yearMultiplier = 1.25
+      else if (experienceYears >= 5) yearMultiplier = 1.15
+      else if (experienceYears >= 3) yearMultiplier = 1.05
+      else if (experienceYears >= 1) yearMultiplier = 0.95
+      else yearMultiplier = 0.85
 
       experienceScore = Math.round(experienceScore * yearMultiplier * multipliers.experience)
 
@@ -116,34 +111,33 @@ export class DirectScoringService {
         score: Math.min(100, experienceScore),
         maxScore: 100,
         reasoning: `${experienceYears} years experience with ${experienceMatch.matchedKeywords.length} relevant indicators`,
-        keywords: experienceMatch.matchedKeywords,
+        keywords: experienceMatch.matchedKeywords, // ONLY DETECTED EXPERIENCE KEYWORDS
       })
 
       const educationText = application.education_level || ""
-      let educationScore = 50 // Reduced base education score from 60 to 50
+      let educationScore = 45 // Reduced base education score from 50 to 45
       let educationLevel = "basic"
-      let educationKeywords: string[] = []
+      let educationKeywords: string[] = [] // Will only contain DETECTED education markers
 
-      // Check for education levels with weighted scoring
       for (const [level, weight] of Object.entries(SCORING_WEIGHTS.education)) {
         if (resumeText.includes(level) || educationText.toLowerCase().includes(level)) {
-          if (weight > educationScore - 50) {
-            educationScore = 50 + weight // Base + bonus
+          if (weight > educationScore - 45) {
+            educationScore = 45 + weight
             educationLevel = level
-            educationKeywords = [level]
+            educationKeywords = [level] // Store ONLY what was detected
           }
         }
       }
 
-      // Check for relevant education fields
+      // Check for relevant education fields - ONLY add if actually found
       const relevantEducation = positionRef.education.preferred.filter(
         (field) =>
           resumeText.includes(field.toLowerCase()) || educationText.toLowerCase().includes(field.toLowerCase()),
       )
 
       if (relevantEducation.length > 0) {
-        educationScore += relevantEducation.length * 20 // More generous bonus
-        educationKeywords.push(...relevantEducation)
+        educationScore += relevantEducation.length * 15
+        educationKeywords.push(...relevantEducation) // Add only detected fields
       }
 
       educationScore = Math.round(educationScore * multipliers.education)
@@ -156,7 +150,7 @@ export class DirectScoringService {
           educationLevel !== "basic"
             ? `${educationLevel} education${relevantEducation.length > 0 ? ` in relevant field (${relevantEducation.join(", ")})` : ""}`
             : "Basic education level detected",
-        keywords: educationKeywords,
+        keywords: educationKeywords, // ONLY DETECTED EDUCATION
       })
 
       const trainingKeywords = [
@@ -165,15 +159,15 @@ export class DirectScoringService {
         ...positionRef.training.workshops,
       ]
 
+      // Filter to ONLY certifications actually found in the resume
       const trainingMatches = trainingKeywords.filter((training) => resumeText.includes(training.toLowerCase()))
 
-      let trainingScore = 50 // Reduced base certification score from 55 to 50
+      let trainingScore = 45 // Reduced base certification score from 50 to 45
 
       trainingMatches.forEach((training) => {
-        // Apply certification weights with more generous scaling
         for (const [level, weight] of Object.entries(SCORING_WEIGHTS.certifications)) {
           if (training.toLowerCase().includes(level)) {
-            trainingScore += weight * 0.3 // More generous scaling
+            trainingScore += weight * 0.25
             break
           }
         }
@@ -189,11 +183,11 @@ export class DirectScoringService {
           trainingMatches.length > 0
             ? `Found ${trainingMatches.length} relevant certifications/training`
             : "Basic qualification level",
-        keywords: trainingMatches,
+        keywords: trainingMatches, // ONLY DETECTED CERTIFICATIONS
       })
 
       const personalityMatch = SkillMatcher.matchPersonality(resumeText, position)
-      const personalityScore = Math.max(50, Math.round(personalityMatch.score * 100)) // Reduced minimum from 60 to 50 points
+      const personalityScore = Math.max(50, Math.round(personalityMatch.score * 100))
 
       results.push({
         criterion: "personality",
@@ -203,62 +197,54 @@ export class DirectScoringService {
           personalityMatch.matchedTraits.length > 0
             ? `Found ${personalityMatch.matchedTraits.length} relevant personality traits`
             : "Professional presentation detected",
-        keywords: personalityMatch.matchedTraits,
+        keywords: personalityMatch.matchedTraits, // ONLY DETECTED TRAITS
       })
 
       const totalCriteria = results.length
       const criteriaWithGoodScores = results.filter((r) => r.score >= 60).length
       const criteriaWithExcellentScores = results.filter((r) => r.score >= 80).length
 
-      // Calculate base weighted total score
       let totalScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length)
 
-      // Apply multi-criteria bonuses
       let bonusPoints = 0
       const bonusReasons: string[] = []
 
-      // Bonus for meeting multiple criteria well
       if (criteriaWithGoodScores >= 3) {
-        bonusPoints += 15 // Increased from 10 to 15
-        bonusReasons.push(`+15 for meeting ${criteriaWithGoodScores}/${totalCriteria} criteria well`)
+        bonusPoints += 12
+        bonusReasons.push(`+12 for meeting ${criteriaWithGoodScores}/${totalCriteria} criteria well`)
       }
 
       if (criteriaWithExcellentScores >= 2) {
-        bonusPoints += 20 // Increased from 15 to 20
-        bonusReasons.push(`+20 for excelling in ${criteriaWithExcellentScores} criteria`)
+        bonusPoints += 15
+        bonusReasons.push(`+15 for excelling in ${criteriaWithExcellentScores} criteria`)
       }
 
-      // Bonus for comprehensive skill matching
       if (allSkillMatches.length >= 5) {
-        bonusPoints += 12 // Increased from 8 to 12
-        bonusReasons.push(`+12 for comprehensive skill match (${allSkillMatches.length} skills)`)
+        bonusPoints += 10
+        bonusReasons.push(`+10 for comprehensive skill match (${allSkillMatches.length} skills)`)
       }
 
       if (allSkillMatches.length >= 2) {
-        bonusPoints += 5
-        bonusReasons.push(`+5 for relevant skill matches`)
+        bonusPoints += 4
+        bonusReasons.push(`+4 for relevant skill matches`)
       }
 
-      // Experience + Education combo bonus
       if (
         results.find((r) => r.criterion === "experience")?.score >= 60 &&
         results.find((r) => r.criterion === "education")?.score >= 60
       ) {
-        bonusPoints += 8 // Increased from 5 to 8
-        bonusReasons.push("+8 for strong experience-education combination")
+        bonusPoints += 6
+        bonusReasons.push("+6 for strong experience-education combination")
       }
 
       if (resumeText.length > 100) {
-        bonusPoints += 5
-        bonusReasons.push("+5 for detailed application")
+        bonusPoints += 4
+        bonusReasons.push("+4 for detailed application")
       }
 
-      // Apply bonus points
       totalScore = Math.min(100, totalScore + bonusPoints)
+      totalScore = Math.max(25, totalScore)
 
-      totalScore = Math.max(25, totalScore) // Minimum 25% score for any application
-
-      // Prepare data for database
       const scores: Record<string, number> = {}
       const scoreBreakdown: Record<string, any> = {}
 
@@ -268,31 +254,30 @@ export class DirectScoringService {
           score: result.score,
           maxScore: result.maxScore,
           reasoning: result.reasoning,
-          matched_items: result.keywords,
+          matched_items: result.keywords, // NOW ONLY CONTAINS DETECTED KEYWORDS
         }
       })
 
       if (bonusPoints > 0) {
         scoreBreakdown["bonus"] = {
           score: bonusPoints,
-          maxScore: 50,
+          maxScore: 40,
           reasoning: bonusReasons.join(", "),
           matched_items: [],
         }
       }
 
-      console.log("[v0] DirectScoringService: Enhanced scores:", scores)
-      console.log("[v0] DirectScoringService: Bonus points applied:", bonusPoints)
+      console.log("[v0] DirectScoringService: Detected keywords only - no hallucination:", 
+        results.map(r => ({ criterion: r.criterion, detected: r.keywords.length })))
       console.log("[v0] DirectScoringService: Final score:", totalScore)
 
-      // Update application with scores
       const { error: updateError } = await supabase
         .from("applications")
         .update({
           scores: scores,
           total_score: totalScore,
           score_breakdown: scoreBreakdown,
-          scoring_summary: `Enhanced scoring: ${totalScore}% (base: ${totalScore - bonusPoints}% + bonus: ${bonusPoints}%) across ${results.length} criteria with multi-criteria bonuses`,
+          scoring_summary: `Accurate scoring: ${totalScore}% (base: ${totalScore - bonusPoints}% + bonus: ${bonusPoints}%) with ONLY detected keywords`,
         })
         .eq("id", applicationId)
 
@@ -301,10 +286,10 @@ export class DirectScoringService {
         return false
       }
 
-      console.log("[v0] DirectScoringService: Successfully scored application with enhanced total:", totalScore)
+      console.log("[v0] DirectScoringService: Successfully scored with accurate keyword detection")
       return true
     } catch (error) {
-      console.error("[v0] DirectScoringService: Enhanced scoring failed:", error)
+      console.error("[v0] DirectScoringService: Scoring failed:", error)
       return false
     }
   }

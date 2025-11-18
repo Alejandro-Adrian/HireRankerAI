@@ -15,6 +15,8 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
   const [eonState, setEonState] = useState<EonState>("neutral")
   const [loading, setLoading] = useState(false)
   const [showFAQ, setShowFAQ] = useState(false)
+  const [typingMessage, setTypingMessage] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -59,7 +61,7 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, typingMessage])
 
   useEffect(() => {
     localStorage.setItem("chatbot-history", JSON.stringify(messages))
@@ -75,6 +77,25 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
       }
     }
   }, [])
+
+  const typeMessage = (text: string) => {
+    return new Promise<void>((resolve) => {
+      setIsTyping(true)
+      setTypingMessage("")
+      let index = 0
+      
+      const interval = setInterval(() => {
+        if (index < text.length) {
+          setTypingMessage(text.slice(0, index + 1))
+          index++
+        } else {
+          clearInterval(interval)
+          setIsTyping(false)
+          resolve()
+        }
+      }, 20) // 20ms per character for smooth typing
+    })
+  }
 
   const sendMessage = async () => {
     const trimmed = message.trim()
@@ -103,15 +124,18 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
       }
 
       const data = await response.json()
-      const aiResponse = data.response.slice(0, 200)
+      const aiResponse = data.response
 
+      setEonState("answering")
+      await typeMessage(aiResponse)
+      
       setMessages([
         ...updatedMessages,
         { role: "assistant", content: aiResponse },
       ])
-      setEonState("answering")
+      setTypingMessage("")
       
-      setTimeout(() => setEonState("neutral"), 3000)
+      setTimeout(() => setEonState("neutral"), 1500)
     } catch (error) {
       console.error("[v0] Chat error:", error)
       const errorMsg = "I couldn't process that. Try rephrasing or check the FAQ for quick answers."
@@ -136,6 +160,8 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
     setMessages([])
     localStorage.removeItem("chatbot-history")
     setEonState("neutral")
+    setTypingMessage("")
+    setIsTyping(false)
   }
 
   return (
@@ -218,16 +244,24 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`rounded-lg px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap max-w-[88%] ${
+                      className={`rounded-lg px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap ${
                         msg.role === "user"
-                          ? "bg-blue-600 text-white"
-                          : "bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-100"
+                          ? "bg-blue-600 text-white max-w-[85%]"
+                          : "bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-100 w-full"
                       }`}
                     >
                       {msg.content}
                     </div>
                   </div>
                 ))}
+                {isTyping && typingMessage && (
+                  <div className="flex justify-start">
+                    <div className="rounded-lg px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-100 w-full">
+                      {typingMessage}
+                      <span className="inline-block w-1 h-4 bg-blue-400 ml-1 animate-pulse" />
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </>
             )}
@@ -244,14 +278,13 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
             placeholder="Ask anything..."
             className="flex-1 glass rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-slate-800/50 transition-all duration-200"
             onKeyDown={onKeyDown}
-            disabled={loading}
-            maxLength={150}
+            disabled={loading || isTyping}
           />
           
           <button
             className="p-2 rounded-lg bg-slate-800/60 hover:bg-red-600/40 disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
             onClick={() => setMessage("")}
-            disabled={!message.trim() || loading}
+            disabled={!message.trim() || loading || isTyping}
             title="Clear input"
           >
             <X className="w-4 h-4" />
@@ -260,7 +293,7 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
           <button
             className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors flex-shrink-0"
             onClick={sendMessage}
-            disabled={loading || !message.trim()}
+            disabled={loading || !message.trim() || isTyping}
             title="Send message"
           >
             {loading ? (
@@ -269,9 +302,6 @@ export default function AIChatbot({ onClose }: AIChatbotProps) {
               <Send className="w-4 h-4" />
             )}
           </button>
-        </div>
-        <div className="text-xs text-slate-500 px-1 mt-1">
-          {message.length}/150
         </div>
       </div>
     </div>

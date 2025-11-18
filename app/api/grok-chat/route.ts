@@ -57,16 +57,16 @@ export async function POST(request: NextRequest) {
         .select("id, title, status, created_at")
         .limit(5)
 
-      systemContext = `You are HireRankerAI's helpful HR assistant. Keep ALL responses under 2 sentences—be concise, clear, and actionable.
+      systemContext = `You are HireRankerAI's helpful HR assistant. Provide clear, comprehensive, and actionable responses to help users with their HR tasks.
 
 RANKINGS: ${rankings?.map((r: any) => `${r.title} (${r.position})`).join(", ") || "None yet"}
 RECENT APPS: ${applications?.length || 0} candidates
 SESSIONS: ${sessions?.length || 0} interviews
 
-Answer briefly with specific steps when asked "how to". Use numbered lists only if 3+ steps. Suggest FAQ for complex questions.`
+Be thorough and helpful. Provide step-by-step guidance when needed. Use examples and explanations to ensure clarity.`
     } catch (dbError) {
       console.warn("[v0] Error fetching database context:", dbError)
-      systemContext = "You are HireRankerAI's HR assistant. Keep responses under 2 sentences. Be clear and actionable."
+      systemContext = "You are HireRankerAI's HR assistant. Provide clear, comprehensive, and actionable responses."
     }
 
     // Prepare messages for Grok
@@ -82,13 +82,13 @@ Answer briefly with specific steps when asked "how to". Use numbered lists only 
       }),
       system: systemContext,
       messages,
-      temperature: 0.6, // Lower temp for consistency
-      maxTokens: 120, // Tighter token limit
+      temperature: 0.7, // Lower temp for consistency
+      maxTokens: 2000, // Tighter token limit
     })
 
     return NextResponse.json({
       success: true,
-      response: response.trim().slice(0, 200), // Clean response
+      response: response.trim(),
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
