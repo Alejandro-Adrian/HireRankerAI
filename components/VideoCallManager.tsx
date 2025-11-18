@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { revalidateVideoSessions } from "@/app/actions/video-sessions"
 import SuccessModal from "./SuccessModal"
 import SessionSummaryModal from "./SessionSummaryModal"
-import SessionDetailCard from "./SessionDetailCard" // Import the new SessionDetailCard component
+import SessionDetailCard from "./SessionDetailCard"
 
 interface VideoCallManagerProps {
   rankings: any[]
@@ -56,9 +56,36 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
   const [scheduledDate, setScheduledDate] = useState("")
   const [scheduledTime, setScheduledTime] = useState("")
 
+  const completedSessions = sessions.filter((s) => s.status === "completed")
+  const activeSessions = sessions.filter((s) => s.status !== "completed")
+
   useEffect(() => {
     fetchSessions()
   }, [])
+
+  useEffect(() => {
+    if (activeView !== "history") return
+
+    // Check if there are any processing sessions
+    const hasProcessingSessions = completedSessions.some(
+      (session) => session.status === "completed" && (!session.transcript || !session.transcript.trim())
+    )
+
+    if (!hasProcessingSessions) return
+
+    console.log("[v0] Starting auto-refresh for processing sessions...")
+
+    // Poll every 5 seconds to check for updates
+    const pollInterval = setInterval(() => {
+      console.log("[v0] Auto-refreshing sessions...")
+      refreshSessions()
+    }, 5000)
+
+    return () => {
+      console.log("[v0] Stopping auto-refresh")
+      clearInterval(pollInterval)
+    }
+  }, [activeView, completedSessions])
 
   const fetchSessions = async () => {
     try {
@@ -342,9 +369,6 @@ const VideoCallManager = ({ rankings, onBack, onNotification, user }: VideoCallM
       onNotification("Error clearing history", "error")
     }
   }
-
-  const completedSessions = sessions.filter((s) => s.status === "completed")
-  const activeSessions = sessions.filter((s) => s.status !== "completed")
 
   return (
     <div className="min-h-screen bg-background">

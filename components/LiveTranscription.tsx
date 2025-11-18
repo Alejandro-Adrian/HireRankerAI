@@ -1,25 +1,31 @@
 "use client"
-import { useState } from "react"
-import { AlertCircle } from 'lucide-react'
+import { useState, useEffect } from "react"
+import { Mic, CheckCircle2 } from 'lucide-react'
 
 interface LiveTranscriptionProps {
   stream: MediaStream | null
   isRecording: boolean
+  meetingId?: string
 }
 
-export function LiveTranscription({ stream, isRecording }: LiveTranscriptionProps) {
-  // Post-call transcription will handle everything after call ends
-  
+export function LiveTranscription({ isRecording }: LiveTranscriptionProps) {
+  // The actual transcription happens at end-call using the working batch API
+
   if (!isRecording) return null
 
   return (
-    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-      <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-amber-600 flex-shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="truncate">
-          <span className="text-amber-600">Audio recording in progress</span>
-          <span className="text-muted-foreground ml-1">(transcription after call)</span>
-        </p>
+    <div className="w-full bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800 px-4 sm:px-6 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse"></div>
+          <Mic className="h-4 w-4 text-emerald-600" />
+          <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+            Audio recording in progress
+          </span>
+        </div>
+        <span className="text-xs text-emerald-700 dark:text-emerald-300 ml-auto">
+          Transcription will be available after call ends
+        </span>
       </div>
     </div>
   )

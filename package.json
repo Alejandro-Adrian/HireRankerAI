@@ -48,7 +48,7 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/nodemailer": "^6.4.14",
     "@types/uuid": "^10.0.0",
-    "@vercel/blob": "2.0.0",
+    "@vercel/blob": "latest",
     "@videosdk.live/rtc-js-prebuilt": "0.3.43",
     "ai": "latest",
     "bcryptjs": "latest",

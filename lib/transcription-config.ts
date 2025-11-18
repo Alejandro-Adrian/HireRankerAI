@@ -5,41 +5,40 @@
  * 
  * FLOW:
  * ┌─────────────────────────────────────────────────────────────────┐
- * │  1. Video Call Recording                                       │
- * │  - User joins video call                                       │
- * │  - Audio is recorded using MediaRecorder API                  │
- * │  - Recording saved as WebM format (audio/webm)               │
+ * │  1. Video Call Recording (ALL PARTICIPANTS)                    │
+ * │  - VideoSDK cloud recording captures all audio streams        │
+ * │  - Includes host + all participants automatically             │
+ * │  - Recording saved in VideoSDK cloud storage                  │
+ * │  - Fallback: MediaRecorder for local audio if SDK fails      │
  * └─────────────────────────────────────────────────────────────────┘
  *                           ↓
  * ┌─────────────────────────────────────────────────────────────────┐
- * │  2. Recording Upload                                           │
- * │  - Audio blob uploaded to Vercel Blob Storage                │
- * │  - Recording URL stored in video_sessions table              │
- * │  - Session status: "active"                                  │
+ * │  2. Recording Retrieval                                        │
+ * │  - Fetch recording URL from VideoSDK API                      │
+ * │  - Download mixed audio file (MP4 format)                     │
+ * │  - Contains all participants' voices in one stream           │
  * └─────────────────────────────────────────────────────────────────┘
  *                           ↓
  * ┌─────────────────────────────────────────────────────────────────┐
- * │  3. Batch Transcription (AssemblyAI REST API)                │
- * │  - POST /api/video-sessions/process-recording                │
- * │  - Downloads audio from storage                              │
- * │  - Uploads to AssemblyAI                                     │
- * │  - Polls for completion (max 5 minutes)                      │
- * │  - Returns: Full transcript text                             │
+ * │  3. Transcription with Speaker Diarization                    │
+ * │  - Upload to Deepgram with diarize=true                      │
+ * │  - Identifies and labels different speakers                  │
+ * │  - Returns: "Speaker 1: ...", "Speaker 2: ..."              │
+ * │  - Full transcript with all participants' speech             │
  * └─────────────────────────────────────────────────────────────────┘
  *                           ↓
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  4. AI Summarization (Grok/XAI)                              │
- * │  - Sends complete transcript to Grok                         │
- * │  - Generates 2-3 paragraph summary                           │
- * │  - Focuses on key points and qualifications                 │
+ * │  - Sends complete multi-speaker transcript to Grok           │
+ * │  - Generates comprehensive interview summary                 │
+ * │  - Includes all participants' contributions                 │
  * └─────────────────────────────────────────────────────────────────┘
  *                           ↓
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  5. Results Storage                                            │
- * │  - transcript: Full transcribed text                         │
- * │  - summary: AI-generated summary                             │
+ * │  - transcript: Full diarized text (all speakers)             │
+ * │  - summary: AI summary of complete conversation              │
  * │  - status: Changed to "completed"                            │
- * │  - Stored in video_sessions table                            │
  * └─────────────────────────────────────────────────────────────────┘
  *                           ↓
  * ┌─────────────────────────────────────────────────────────────────┐
@@ -55,8 +54,29 @@
  */
 
 export const TRANSCRIPTION_CONFIG = {
-  // AssemblyAI REST API batch configuration
+  // Primary: VideoSDK cloud recording (captures ALL participants)
+  recording: {
+    method: "VideoSDK Cloud Recording",
+    capturesAllParticipants: true,
+    format: "MP4",
+    layout: "GRID",
+    fallback: "MediaRecorder (local audio only)",
+  },
+
+  // Deepgram transcription with speaker diarization
   transcription: {
+    provider: "Deepgram",
+    model: "nova-2",
+    features: {
+      smartFormat: true,
+      diarization: true, // Identifies different speakers
+      punctuation: true,
+    },
+    supportedFormats: ["audio/webm", "audio/mp4", "video/mp4"],
+  },
+
+  // AssemblyAI REST API batch configuration
+  assemblyAI: {
     provider: "AssemblyAI",
     method: "REST API (Batch)",
     maxDuration: 300, // 5 minutes polling

@@ -1,9 +1,19 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
-import { FileText, Clock, Users, AlertCircle, Loader2 } from 'lucide-react'
+import { FileText, Clock, Users, Sparkles } from 'lucide-react'
 import SessionSummaryModal from './SessionSummaryModal'
+import { Button } from '@/components/ui/button'
+
+interface ParticipantRecording {
+  id: string
+  participant_role: string
+  participant_name?: string
+  transcript?: string
+  status?: string
+  created_at?: string
+}
 
 interface SessionDetailCardProps {
   session: {
@@ -22,29 +32,71 @@ interface SessionDetailCardProps {
 
 export default function SessionDetailCard({ session, onRefresh }: SessionDetailCardProps) {
   const [showModal, setShowModal] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [participantRecordings, setParticipantRecordings] = useState<ParticipantRecording[]>([])
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
 
-  const handleRefresh = async () => {
-    if (!onRefresh) return
-    setIsLoading(true)
+  const loadParticipantRecordings = async () => {
     try {
-      await onRefresh()
-    } finally {
-      setIsLoading(false)
+      const response = await fetch(`/api/video-sessions/${session.id}/recordings`)
+      if (response.ok) {
+        const data = await response.json()
+        setParticipantRecordings(data.recordings || [])
+      }
+    } catch (error) {
+      console.error("[v0] Error loading participant recordings:", error)
     }
   }
 
-  const hasTranscription = !!(session.transcript && session.transcript.trim().length > 0)
+  const handleGenerateSummary = async () => {
+    setIsGeneratingSummary(true)
+    console.log('[v0] Manually triggering summary generation for session:', session.id)
+    
+    try {
+      const response = await fetch(`/api/video-sessions/${session.id}/generate-summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        console.log('[v0] Summary generated successfully:', data)
+        if (onRefresh) {
+          onRefresh()
+        }
+      } else {
+        console.error('[v0] Summary generation failed:', data)
+        alert(`Failed to generate summary: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('[v0] Error generating summary:', error)
+      alert('Error generating summary. Check console for details.')
+    } finally {
+      setIsGeneratingSummary(false)
+    }
+  }
+
+  useEffect(() => {
+    loadParticipantRecordings()
+  }, [session.id])
+
+  const combinedTranscript = participantRecordings
+    .filter(r => r.transcript)
+    .map(r => r.transcript)
+    .join(' ')
+
+  const hasTranscription = combinedTranscript.trim().length > 0
   const hasSummary = !!(session.summary && session.summary.trim().length > 0)
-  const isProcessing = session.status === 'active' || (session.status === 'completed' && !hasTranscription)
 
   return (
     <>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-border bg-card">
+        <div className="p-6 border-b border-border bg-card">
           <div className="flex items-start justify-between mb-3">
-            <h3 className="text-base sm:text-lg font-semibold text-foreground">{session.title}</h3>
+            <h3 className="text-lg font-semibold text-foreground">{session.title}</h3>
             <span
               className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2 flex-shrink-0 ${
                 session.status === 'completed'
@@ -57,99 +109,80 @@ export default function SessionDetailCard({ session, onRefresh }: SessionDetailC
               {session.status}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {new Date(session.created_at).toLocaleString()}
           </p>
         </div>
 
         {/* Metadata */}
-        <div className="px-4 sm:px-6 py-3 bg-muted/30 flex flex-wrap gap-3 text-xs sm:text-sm text-muted-foreground border-b border-border">
-          {session.duration_seconds && (
+        <div className="px-6 py-3 bg-muted/30 flex gap-4 text-sm text-muted-foreground border-b border-border">
+          {session.duration_seconds !== undefined && (
             <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <Clock className="h-4 w-4 flex-shrink-0" />
               <span>{Math.floor(session.duration_seconds / 60)}m {session.duration_seconds % 60}s</span>
             </div>
           )}
-          {session.participants_count !== undefined && (
-            <div className="flex items-center gap-2">
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span>{session.participants_count} participants</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 flex-shrink-0" />
+            <span>{participantRecordings.length} participants</span>
+          </div>
         </div>
 
-        {/* Transcription Status */}
-        <div className="p-4 sm:p-6">
-          {isProcessing ? (
-            <div className="flex items-center justify-between p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
-              <div className="flex items-center gap-3">
-                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 animate-spin flex-shrink-0" />
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-blue-900 dark:text-blue-200">
-                    Processing recording...
-                  </p>
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Transcription and summary will be ready shortly
-                  </p>
-                </div>
+        {/* Transcript and Summary Sections */}
+        <div className="p-6 space-y-4">
+          {/* Transcript Section */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/30 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="h-4 w-4 text-slate-600 dark:text-slate-400 flex-shrink-0" />
+              <h4 className="text-sm font-semibold text-foreground">Transcript</h4>
+            </div>
+            {hasTranscription ? (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {combinedTranscript.substring(0, 150)}...
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">No speech detected...</p>
+            )}
+          </div>
+
+          {/* Summary Section */}
+          <div className="p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-700">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+                <h4 className="text-sm font-semibold text-foreground">Summary</h4>
               </div>
-              <button
-                onClick={handleRefresh}
-                disabled={isLoading}
-                className="text-xs sm:text-sm px-2 sm:px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded transition-colors flex-shrink-0"
-              >
-                {isLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
-            </div>
-          ) : null}
-
-          {/* Transcription Preview */}
-          {hasTranscription || hasSummary ? (
-            <div className="space-y-3">
-              {hasTranscription && (
-                <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/20 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                    <h4 className="text-xs sm:text-sm font-semibold text-foreground">Transcript</h4>
-                  </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3">
-                    {session.transcript?.substring(0, 200)}...
-                  </p>
-                </div>
+              {hasTranscription && !hasSummary && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleGenerateSummary}
+                  disabled={isGeneratingSummary}
+                  className="h-7 text-xs"
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {isGeneratingSummary ? 'Generating...' : 'Generate'}
+                </Button>
               )}
-
-              {hasSummary && (
-                <div className="p-3 sm:p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                    <h4 className="text-xs sm:text-sm font-semibold text-foreground">Summary</h4>
-                  </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                    {session.summary?.substring(0, 150)}...
-                  </p>
-                </div>
-              )}
-
-              <button
-                onClick={() => setShowModal(true)}
-                className="w-full mt-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors border border-primary"
-              >
-                View Full Transcription & Summary
-              </button>
             </div>
-          ) : session.status === 'completed' && !isProcessing ? (
-            <div className="flex items-start gap-3 p-3 sm:p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-amber-900 dark:text-amber-200">
-                  No speech detected
-                </p>
-                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                  The recording did not contain any audio or speech to transcribe.
-                </p>
-              </div>
-            </div>
-          ) : null}
+            {hasSummary ? (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {session.summary.substring(0, 150)}...
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {hasTranscription ? 'Click "Generate" to create AI summary' : 'No speech detected...'}
+              </p>
+            )}
+          </div>
+
+          {/* View Full Button */}
+          <button
+            onClick={() => setShowModal(true)}
+            className="w-full px-4 py-2.5 text-sm font-medium text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-colors border border-teal-600 dark:border-teal-400"
+          >
+            View Full Transcription & Summary
+          </button>
         </div>
       </Card>
 
@@ -158,6 +191,7 @@ export default function SessionDetailCard({ session, onRefresh }: SessionDetailC
         <SessionSummaryModal
           isOpen={showModal}
           session={session}
+          participantRecordings={participantRecordings}
           onClose={() => setShowModal(false)}
         />
       )}

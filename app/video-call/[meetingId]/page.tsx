@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from "react"
 import { Loader2, Phone, Copy, AlertCircle, CheckCircle } from 'lucide-react'
 import { LiveTranscription } from "@/components/LiveTranscription"
 
+declare global {
+  interface Window {
+    VideoSDKMeeting: any
+  }
+}
+
 export default function VideoCallPage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -12,125 +18,99 @@ export default function VideoCallPage() {
   const role = searchParams.get("role") || "participant"
   const token = searchParams.get("token")
 
-  const [apiKey, setApiKey] = useState<string>("")
+  const [accessAllowed, setAccessAllowed] = useState<boolean | null>(null)
+  const [startTime] = useState<number>(Date.now())
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
-  const [audioToken, setAudioToken] = useState<string>("")
-  const [startTime] = useState<number>(Date.now())
-  const [accessAllowed, setAccessAllowed] = useState<boolean | null>(null)
   const [isRecording, setIsRecording] = useState(false)
-  const [recordingError, setRecordingError] = useState<string | null>(null)
   const [showCompletionMessage, setShowCompletionMessage] = useState(false)
+  const [participantEmail, setParticipantEmail] = useState<string>("")
+  const [participantName, setParticipantName] = useState<string>("")
 
   const meetingContainerRef = useRef<HTMLDivElement>(null)
   const meetingRef = useRef<any>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
 
   const startRecording = async () => {
     try {
-      setRecordingError(null)
-      console.log("[v0] Requesting audio stream with all tracks...")
-      
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: false,
+      console.log(`[v0] Starting audio recording for ${role}...`)
+      const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        }
-      }).catch(() => {
-        // If display media fails, fallback to getUserMedia for single-direction audio
-        return navigator.mediaDevices.getUserMedia({ audio: true })
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        } 
       })
       
-      streamRef.current = stream
-      
-      console.log("[v0] Audio stream obtained, track count:", stream.getAudioTracks().length)
-
-      const mimeType = "audio/webm"
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4"
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
         audioBitsPerSecond: 128000,
       })
-      mediaRecorderRef.current = mediaRecorder
-      audioChunksRef.current = []
-
-      console.log("[v0] MediaRecorder created with mimeType:", mimeType)
-
+      
       mediaRecorder.addEventListener("dataavailable", (event) => {
         if (event.data.size > 0) {
-          console.log("[v0] Audio chunk received, size:", event.data.size, "bytes")
           audioChunksRef.current.push(event.data)
         }
       })
 
-      mediaRecorder.start()
-      console.log("[v0] Recording started")
+      mediaRecorder.start(1000)
+      mediaRecorderRef.current = mediaRecorder
       setIsRecording(true)
+      console.log(`[v0] ${role} recording started successfully`)
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to start recording"
-      console.error("[v0] Recording start error:", errorMsg)
-      setRecordingError(errorMsg)
+      console.error(`[v0] Failed to start recording for ${role}:`, err)
     }
   }
 
   const stopRecording = async () => {
-    try {
-      if (mediaRecorderRef.current && isRecording) {
-        console.log("[v0] Stopping MediaRecorder...")
-        mediaRecorderRef.current.stop()
+    if (!mediaRecorderRef.current) {
+      console.log("[v0] No recording to stop")
+      return
+    }
 
-        await new Promise((resolve) => {
-          const checkInterval = setInterval(() => {
-            if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
-              clearInterval(checkInterval)
-              resolve(null)
-            }
-          }, 100)
+    try {
+      console.log(`[v0] Stopping ${role} recording...`)
+      setIsRecording(false)
+      mediaRecorderRef.current.stop()
+      
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      if (audioChunksRef.current.length > 0) {
+        const mimeType = mediaRecorderRef.current.mimeType
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
+        const extension = mimeType.includes("webm") ? "webm" : "mp4"
+        
+        const formData = new FormData()
+        formData.append("audio", audioBlob, `recording-${meetingId}-${role}.${extension}`)
+        formData.append("sessionId", meetingId)
+        formData.append("participantRole", role)
+        formData.append("participantName", participantName || (role === "host" ? "Host" : "Participant"))
+
+        console.log(`[v0] Submitting ${role} recording for transcription...`)
+        console.log(`[v0] Audio blob size: ${audioBlob.size} bytes`)
+        
+        const transcribeResponse = await fetch("/api/transcription/video-session-batch", {
+          method: "POST",
+          body: formData,
         })
 
-        console.log("[v0] MediaRecorder stopped, total chunks:", audioChunksRef.current.length)
-
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop())
-          console.log("[v0] Audio stream tracks stopped")
-        }
-
-        setIsRecording(false)
-
-        if (audioChunksRef.current.length > 0) {
-          const mimeType = "audio/webm"
-          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
-
-          console.log("[v0] Audio blob created, total size:", audioBlob.size, "bytes")
-
-          const formData = new FormData()
-          formData.append("audio", audioBlob, `recording-${meetingId}.webm`)
-          formData.append("sessionId", meetingId)
-
-          console.log("[v0] Submitting to /api/transcription/video-call-batch endpoint")
-          const transcribeResponse = await fetch("/api/transcription/video-call-batch", {
-            method: "POST",
-            body: formData,
-          })
-
-          if (transcribeResponse.ok) {
-            const result = await transcribeResponse.json()
-            console.log("[v0] Transcription submitted successfully:", result)
-          } else {
-            console.error("[v0] Transcription submission failed:", transcribeResponse.status, await transcribeResponse.text())
-          }
+        if (transcribeResponse.ok) {
+          const result = await transcribeResponse.json()
+          console.log(`[v0] ${role} recording submitted successfully:`, result)
         } else {
-          console.warn("[v0] No audio chunks to transcribe")
+          const errorText = await transcribeResponse.text()
+          console.error(`[v0] Failed to submit ${role} recording:`, transcribeResponse.status, errorText)
         }
+        
+        audioChunksRef.current = []
       }
+      
+      mediaRecorderRef.current = null
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to stop recording"
-      console.error("[v0] Recording stop error:", errorMsg)
-      setRecordingError(errorMsg)
+      console.error(`[v0] Error stopping ${role} recording:`, err)
     }
   }
 
@@ -138,23 +118,19 @@ export default function VideoCallPage() {
     try {
       console.log("[v0] handleEndCall triggered, role:", role)
 
-      // Stop recording FIRST before ending call
       if (isRecording) {
         console.log("[v0] Stopping recording before ending call...")
         await stopRecording()
-        console.log("[v0] Recording stopped")
       }
 
       if (meetingRef.current && typeof meetingRef.current.end === "function") {
         try {
-          console.log("[v0] Calling meeting.end()")
           meetingRef.current.end()
         } catch (e) {
           console.warn("[v0] Error calling meeting.end():", e)
         }
       } else if (meetingRef.current && typeof meetingRef.current.leave === "function") {
         try {
-          console.log("[v0] Calling meeting.leave()")
           meetingRef.current.leave()
         } catch (e) {
           console.warn("[v0] Error calling meeting.leave():", e)
@@ -163,31 +139,26 @@ export default function VideoCallPage() {
 
       const durationSeconds = Math.floor((Date.now() - startTime) / 1000)
 
-      console.log("[v0] Updating session status to completed...")
-      const updateResponse = await fetch(`/api/video-sessions/${meetingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "completed",
-          ended_at: new Date().toISOString(),
-          duration_seconds: durationSeconds,
-        }),
-      })
+      if (role === "host") {
+        const updateResponse = await fetch(`/api/video-sessions/${meetingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "completed",
+            ended_at: new Date().toISOString(),
+            duration_seconds: durationSeconds,
+          }),
+        })
 
-      if (updateResponse.ok) {
-        console.log("[v0] Session updated")
-      } else {
-        console.error("[v0] Failed to update session:", updateResponse.status)
+        if (!updateResponse.ok) {
+          console.error("[v0] Failed to update session")
+        }
       }
 
+      setShowCompletionMessage(true)
+      
       if (role === "host") {
-        console.log("[v0] Host ending call - redirecting to dashboard immediately")
-        setShowCompletionMessage(true)
         setTimeout(() => router.push("/dashboard"), 1500)
-      } else {
-        console.log("[v0] Participant ending call - showing thank you page")
-        setShowCompletionMessage(true)
-        // Participant stays on thank you page, doesn't auto-redirect
       }
     } catch (err) {
       console.error("[v0] Error ending call:", err)
@@ -222,35 +193,37 @@ export default function VideoCallPage() {
           return
         }
 
-        try {
-          console.log("[v0] Creating session record for meeting:", meetingId)
-          const sessionResponse = await fetch("/api/video-sessions/ensure-session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              meeting_id: meetingId,
-              role,
-            }),
-          })
-          if (!sessionResponse.ok) {
-            console.error("[v0] Failed to ensure session:", await sessionResponse.text())
-          } else {
-            console.log("[v0] Session ensured in database")
+        if (accessData.participantName) setParticipantName(accessData.participantName)
+        if (accessData.participantEmail) setParticipantEmail(accessData.participantEmail)
+
+        if (role === "host") {
+          try {
+            console.log("[v0] Creating session record for meeting:", meetingId)
+            const sessionResponse = await fetch("/api/video-sessions/ensure-session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                meeting_id: meetingId,
+                role,
+              }),
+            })
+            if (sessionResponse.ok) {
+              console.log("[v0] Session ensured in database")
+            }
+          } catch (err) {
+            console.error("[v0] Error ensuring session:", err)
           }
-        } catch (err) {
-          console.error("[v0] Error ensuring session:", err)
         }
 
         setAccessAllowed(true)
 
-        // Get token and API key
         const tokenResponse = await fetch("/api/video-sdk/create-token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             meetingId,
             isHost: role === "host",
-            userName: role === "host" ? "Host" : "Participant",
+            userName: participantName || (role === "host" ? "Host" : "Participant"),
           }),
         })
 
@@ -259,21 +232,43 @@ export default function VideoCallPage() {
           throw new Error(tokenData.error || "Failed to create token")
         }
 
-        setApiKey(tokenData.apiKey)
-
-        // Now load the SDK script
         const script = document.createElement("script")
         script.src = "https://sdk.videosdk.live/rtc-js-prebuilt/0.3.43/rtc-js-prebuilt.js"
         script.type = "text/javascript"
         script.async = true
 
         script.onload = () => {
-          // Wait for VideoSDKMeeting to be available
           let attempts = 0
           const checkAndInit = setInterval(() => {
             if (window.VideoSDKMeeting) {
               clearInterval(checkAndInit)
-              initializeVideoMeeting(tokenData.apiKey)
+              
+              try {
+                const config = {
+                  name: participantName || (role === "host" ? "Host" : "Participant"),
+                  meetingId: meetingId,
+                  apiKey: tokenData.apiKey,
+                  containerId: "videosdk-container",
+                  micEnabled: true,
+                  webcamEnabled: true,
+                  participantCanToggleSelfWebcam: true,
+                  participantCanToggleSelfMic: true,
+                  chatEnabled: true,
+                  screenShareEnabled: true,
+                  joinScreen: {
+                    visible: true,
+                  },
+                }
+
+                const meeting = new window.VideoSDKMeeting()
+                meetingRef.current = meeting
+                meeting.init(config)
+                setLoading(false)
+              } catch (err: any) {
+                console.error("[v0] Error initializing meeting:", err)
+                setError(err.message || "Failed to initialize meeting")
+                setLoading(false)
+              }
             } else if (attempts > 50) {
               clearInterval(checkAndInit)
               setError("Failed to initialize VideoSDK")
@@ -302,58 +297,18 @@ export default function VideoCallPage() {
     }
 
     initMeeting()
-  }, [])
+  }, [meetingId, role, token])
 
   useEffect(() => {
-    if (!loading && accessAllowed && !isRecording) {
+    if (!loading && accessAllowed && !isRecording && meetingRef.current) {
       const timer = setTimeout(() => {
-        console.log("[v0] Auto-starting recording...")
+        console.log(`[v0] Auto-starting recording for ${role}...`)
         startRecording()
-      }, 1500) // Give the meeting a moment to fully initialize
+      }, 2000)
 
       return () => clearTimeout(timer)
     }
-  }, [loading, accessAllowed, isRecording])
-
-  const initializeVideoMeeting = (key: string) => {
-    try {
-      const config = {
-        name: role === "host" ? "Host" : "Participant",
-        meetingId: meetingId,
-        apiKey: key,
-        containerId: "videosdk-container",
-        micEnabled: true,
-        webcamEnabled: true,
-        participantCanToggleSelfWebcam: true,
-        participantCanToggleSelfMic: true,
-        chatEnabled: true,
-        screenShareEnabled: true,
-        recording: {
-          enabled: true,
-          autoStart: false,
-          theme: "DARK",
-          layout: {
-            type: "SIDEBAR",
-            priority: "PIN",
-          },
-        },
-        permissions: {
-          toggleRecording: true,
-        },
-        joinScreen: {
-          visible: true,
-        },
-      }
-
-      const meeting = new window.VideoSDKMeeting()
-      meetingRef.current = meeting
-      meeting.init(config)
-      setLoading(false)
-    } catch (err: any) {
-      setError(err.message)
-      setLoading(false)
-    }
-  }
+  }, [loading, accessAllowed, isRecording, role])
 
   if (loading) {
     return (
@@ -401,7 +356,7 @@ export default function VideoCallPage() {
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Call Ended</h2>
                 <p className="text-gray-300 mb-4">Returning to dashboard...</p>
-                <p className="text-sm text-gray-400">Your session recording is being processed in the background</p>
+                <p className="text-sm text-gray-400">Your session recording is being processed</p>
               </>
             ) : (
               <>
@@ -412,7 +367,7 @@ export default function VideoCallPage() {
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Thank You!</h2>
                 <p className="text-gray-300 mb-4">Your interview has been completed successfully</p>
-                <p className="text-sm text-gray-400">We appreciate your time and effort. Our team will review your responses shortly.</p>
+                <p className="text-sm text-gray-400">We appreciate your time. Our team will review your responses shortly.</p>
                 <button
                   onClick={() => router.push("/")}
                   className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
@@ -463,14 +418,7 @@ export default function VideoCallPage() {
         </div>
       </header>
 
-      {isRecording && (
-        <div className="flex-shrink-0 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800 px-4 sm:px-6 py-2 text-emerald-800 dark:text-emerald-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center gap-2">
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse"></div>
-            <span>Audio recording in progress</span>
-          </div>
-        </div>
-      )}
+      <LiveTranscription isRecording={isRecording} stream={null} meetingId={meetingId} />
 
       <div className="flex-1 w-full overflow-hidden bg-black">
         <div id="videosdk-container" className="w-full h-full" ref={meetingContainerRef} />

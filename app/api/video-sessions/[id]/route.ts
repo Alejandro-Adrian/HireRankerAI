@@ -1,11 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params
     const supabase = createClient()
 
-    const { error } = await supabase.from("video_sessions").delete().eq("id", params.id)
+    const { error } = await supabase.from("video_sessions").delete().eq("id", id)
 
     if (error) {
       console.error("Database error:", error)
@@ -19,20 +23,21 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params
     const supabase = createClient()
-    const { id } = params
 
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
     let query = supabase.from("video_sessions").select("*")
 
     if (isUUID) {
-      // Query by database ID
       query = query.eq("id", id)
     } else {
-      // Query by meeting ID
       query = query.eq("meeting_id", id)
     }
 
@@ -50,10 +55,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params
     const supabase = createClient()
-    const { id } = params
     const body = await request.json()
 
     const { status, ended_at, duration_seconds, transcript, summary, recording_url } = body
