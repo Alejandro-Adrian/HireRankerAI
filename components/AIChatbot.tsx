@@ -5,7 +5,11 @@ import { Send, Loader2, X, HelpCircle } from 'lucide-react'
 
 type EonState = "neutral" | "thinking" | "answering"
 
-export default function AIChatbot() {
+interface AIChatbotProps {
+  onClose?: () => void
+}
+
+export default function AIChatbot({ onClose }: AIChatbotProps) {
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([])
   const [eonState, setEonState] = useState<EonState>("neutral")
@@ -137,118 +141,138 @@ export default function AIChatbot() {
   return (
     <div 
       ref={containerRef}
-      className="w-full h-full flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 rounded-2xl overflow-hidden shadow-2xl"
-      style={{ maxHeight: "500px" }}
+      className="h-full w-full flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden border-l border-slate-700/50"
     >
-      <div className="flex items-center justify-between p-4 bg-slate-900/50 border-b border-slate-700">
-        <h3 className="text-white font-semibold text-sm">HR Assistant</h3>
+      {/* Header */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-4 border-b border-slate-700/50">
+        <div className="flex-1">
+          <h2 className="text-lg font-bold text-white">HR Assistant</h2>
+          <p className="text-xs text-slate-400 mt-1">Quick help & support</p>
+        </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowFAQ(!showFAQ)}
-            className="p-1 hover:bg-slate-700 rounded transition-colors"
+            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
             title="Show FAQ"
           >
-            <HelpCircle className="w-4 h-4 text-slate-400 hover:text-white" />
+            <HelpCircle className="w-5 h-5 text-slate-400 hover:text-white" />
           </button>
           <button
-            onClick={clearChat}
-            className="p-1 hover:bg-slate-700 rounded transition-colors"
-            title="Clear conversation"
+            onClick={onClose}
+            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+            title="Close chatbot"
           >
-            <X className="w-4 h-4 text-slate-400 hover:text-white" />
+            <X className="w-5 h-5 text-slate-400 hover:text-white" />
           </button>
         </div>
       </div>
 
+      {/* Background mascot */}
       <div 
-        className="flex-shrink-0 relative h-32 bg-gradient-to-b from-slate-800 to-slate-850 flex items-center justify-center overflow-hidden"
+        className="absolute inset-0 pointer-events-none flex items-end justify-center opacity-8 z-0"
         style={{
           backgroundImage: `url('${eonImage}')`,
           backgroundRepeat: "no-repeat",
-          backgroundSize: "contain",
-          backgroundPosition: "center",
+          backgroundSize: "45%",
+          backgroundPosition: "center bottom",
         }}
       />
 
-      {showFAQ ? (
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-800/30">
-          <p className="text-xs text-slate-400 mb-3 sticky top-0">Quick reference — Common questions:</p>
-          {faqData.map((item, idx) => (
-            <div
-              key={idx}
-              className="bg-slate-700/50 rounded-lg p-2 cursor-pointer hover:bg-slate-700 transition-colors"
-              onClick={() => {
-                setMessage(item.q)
-                setShowFAQ(false)
-              }}
-            >
-              <p className="text-xs font-semibold text-blue-300 mb-1">{item.q}</p>
-              <p className="text-xs text-slate-300 line-clamp-2">{item.a}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-800/30">
-          {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-xs text-slate-400 text-center">
-                Ask me about rankings, applications, interviews, or scoring
-              </p>
-            </div>
-          ) : (
-            <>
-              {messages.map((msg, idx) => (
+      {/* Messages container */}
+      <div className="flex-1 flex flex-col relative z-10 overflow-hidden min-h-0">
+        {showFAQ ? (
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <p className="text-xs text-slate-400 mb-4 sticky top-0 bg-gradient-to-b from-slate-950 to-transparent pb-2">
+              Quick Questions
+            </p>
+            <div className="space-y-2">
+              {faqData.map((item, idx) => (
                 <div
                   key={idx}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg p-3 cursor-pointer hover:bg-slate-800/60 hover:border-slate-600/70 transition-all duration-200 text-sm"
+                  onClick={() => {
+                    setMessage(item.q)
+                    setShowFAQ(false)
+                  }}
                 >
-                  <div
-                    className={`max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
-                      msg.role === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-700 text-slate-100"
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
+                  <p className="font-semibold text-blue-400 mb-1 line-clamp-1">{item.q}</p>
+                  <p className="text-xs text-slate-300 line-clamp-1">{item.a}</p>
                 </div>
               ))}
-              <div ref={messagesEndRef} />
-            </>
-          )}
-        </div>
-      )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <p className="text-sm text-slate-300 mb-2 font-semibold">Welcome!</p>
+                  <p className="text-xs text-slate-500">Ask about rankings, interviews & more</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`rounded-lg px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap max-w-[88%] ${
+                        msg.role === "user"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 text-slate-100"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
-      <div className="flex-shrink-0 flex gap-2 p-3 bg-slate-900/50 border-t border-slate-700">
-        <input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder={showFAQ ? "Select a question or type..." : "Ask..."}
-          className="flex-1 rounded-full px-3 py-2 text-xs bg-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          onKeyDown={onKeyDown}
-          disabled={loading}
-          maxLength={100}
-        />
-        <button
-          className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-2 py-2 rounded-full transition-colors flex-shrink-0"
-          onClick={() => setMessage("")}
-          disabled={!message.trim()}
-          title="Clear input"
-        >
-          <X className="w-4 h-4" />
-        </button>
-        <button
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-2 rounded-full transition-colors flex-shrink-0"
-          onClick={sendMessage}
-          disabled={loading || !message.trim()}
-          title="Send message"
-        >
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
-        </button>
+      {/* Input section */}
+      <div className="flex-shrink-0 relative z-20 px-4 py-3 bg-gradient-to-t from-slate-950 via-slate-950/90 to-slate-950/50 border-t border-slate-700/50">
+        <div className="flex gap-2 items-end">
+          <input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Ask anything..."
+            className="flex-1 glass rounded-lg px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-slate-800/50 transition-all duration-200"
+            onKeyDown={onKeyDown}
+            disabled={loading}
+            maxLength={150}
+          />
+          
+          <button
+            className="p-2 rounded-lg bg-slate-800/60 hover:bg-red-600/40 disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
+            onClick={() => setMessage("")}
+            disabled={!message.trim() || loading}
+            title="Clear input"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <button
+            className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors flex-shrink-0"
+            onClick={sendMessage}
+            disabled={loading || !message.trim()}
+            title="Send message"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+        <div className="text-xs text-slate-500 px-1 mt-1">
+          {message.length}/150
+        </div>
       </div>
     </div>
   )

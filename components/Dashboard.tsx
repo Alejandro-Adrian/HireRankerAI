@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import SettingsComponent from "./Settings"
 import RankingBuilder from "./RankingBuilder"
 import ResultsDashboard from "./ResultsDashboard"
-import { VideoCallManager } from "./VideoCallManager"
+import VideoCallManager from "./VideoCallManager"
 import NotificationCenter from "./NotificationCenter"
-import AIOverlay from "./AIOverlay" // Added AI Overlay component for chatbot
+import AIChatbot from "./AIChatbot"
 import { useRouter } from 'next/navigation'
 
 interface DashboardProps {
@@ -41,6 +41,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [filterPosition, setFilterPosition] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("newest")
+  const [showChatbot, setShowChatbot] = useState(false)
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
   const router = useRouter()
 
@@ -73,14 +74,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const handleCopyLink = (linkId: string) => {
     const applicationUrl = `${window.location.origin}/apply/${linkId}`
     navigator.clipboard.writeText(applicationUrl)
-    // addNotification("Application link copied to clipboard!", "success") // Replaced by NotificationCenter
   }
 
   const handleRankingComplete = () => {
     setShowRankingBuilder(false)
     setSelectedRanking(null)
-    fetchRankings() // Refresh the rankings list
-    // addNotification("Ranking saved successfully!", "success") // Replaced by NotificationCenter
+    fetchRankings()
   }
 
   const handleViewApplications = (ranking: Ranking) => {
@@ -100,15 +99,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       })
 
       if (response.ok) {
-        // addNotification("Ranking deleted successfully!", "success") // Replaced by NotificationCenter
-        fetchRankings() // Refresh the rankings list
+        fetchRankings()
       } else {
         const errorData = await response.json()
-        // addNotification(errorData.error || "Failed to delete ranking", "error") // Replaced by NotificationCenter
       }
     } catch (error) {
       console.error("Error deleting ranking:", error)
-      // addNotification("An error occurred while deleting the ranking", "error") // Replaced by NotificationCenter
     }
   }
 
@@ -125,7 +121,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const filteredAndSortedRankings = useMemo(() => {
     const filtered = rankings
       .filter((ranking) => {
-        // Search filter
         if (searchQuery.trim()) {
           const query = searchQuery.toLowerCase()
           return (
@@ -137,20 +132,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         return true
       })
       .filter((ranking) => {
-        // Position filter
         if (filterPosition !== "all") {
           return ranking.position === filterPosition
         }
         return true
       })
       .filter((ranking) => {
-        // Status filter
         if (filterStatus === "active") return ranking.is_active
         if (filterStatus === "inactive") return !ranking.is_active
         return true
       })
 
-    // Apply sorting
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case "newest":
@@ -179,36 +171,23 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     switch (metricTitle) {
       case "Active Rankings":
         setFilterStatus("active")
-        // addNotification("Filtered to show active rankings", "info") // Replaced by NotificationCenter
         break
       case "Total Rankings":
         setFilterStatus("all")
         setFilterPosition("all")
         setSearchQuery("")
         setSortBy("newest")
-        // addNotification("Showing all rankings", "info") // Replaced by NotificationCenter
-        document.querySelector(".bg-white.rounded-lg.border.border-gray-200")?.scrollIntoView({ behavior: "smooth" })
         break
       case "This Month":
-        // Filter to show rankings created this month
         const thisMonthRankings = rankings.filter((r) => {
           const created = new Date(r.created_at)
           const now = new Date()
           return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear()
         })
-        if (thisMonthRankings.length > 0) {
-          setSortBy("newest")
-          // addNotification(`Showing ${thisMonthRankings.length} rankings created this month`, "info") // Replaced by NotificationCenter
-        } else {
-          // addNotification("No rankings created this month", "info") // Replaced by NotificationCenter
-        }
         break
       case "Total Applications":
         if (rankings.length > 0) {
           setSortBy("most-applications")
-          // addNotification("Sorted by most applications", "info") // Replaced by NotificationCenter
-        } else {
-          // addNotification("No rankings available to view applications", "info") // Replaced by NotificationCenter
         }
         break
       default:
@@ -221,7 +200,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       <SettingsComponent
         onBack={() => setShowSettings(false)}
         userEmail={user.email}
-        // onNotification={addNotification} // Replaced by NotificationCenter
       />
     )
   }
@@ -232,7 +210,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         ranking={selectedRanking}
         onBack={() => setShowRankingBuilder(false)}
         onComplete={handleRankingComplete}
-        // onNotification={addNotification} // Replaced by NotificationCenter
       />
     )
   }
@@ -240,12 +217,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   if (showResults && selectedRanking) {
     return (
       <ResultsDashboard
-        rankingId={selectedRanking.id} // Pass rankingId instead of ranking object
+        rankingId={selectedRanking.id}
         onBack={() => {
           setShowResults(false)
           setSelectedRanking(null)
         }}
-        // onNotification={addNotification} // Replaced by NotificationCenter
       />
     )
   }
@@ -256,7 +232,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         rankings={rankings}
         onBack={handleShowRankings}
         onNotification={(message: string, type: "success" | "error" | "info") => {
-          // Notification will be handled by NotificationCenter in parent
           console.log("[v0] Video Call Notification:", { message, type })
         }}
         user={user}
@@ -306,10 +281,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="relative z-10">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="relative z-10 flex-1 overflow-y-auto">
         {/* Header */}
-        <header className="border-b border-border bg-background">
+        <header className="border-b border-border bg-background sticky top-0 z-20">
           <div className="px-4 sm:px-6 py-4">
             <div className="flex items-center justify-between">
               <button
@@ -417,6 +392,254 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           </div>
         </header>
 
+        {/* Main Content */}
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col gap-6">
+            {/* Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {metrics.map((metric, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleMetricClick(metric.title)}
+                  className="bg-card border border-border rounded-lg p-6 cursor-pointer hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2 font-work-sans">{metric.title}</p>
+                      <p className="text-3xl font-bold text-foreground font-work-sans">{metric.value}</p>
+                    </div>
+                    <div className="p-4 bg-muted rounded-lg">
+                      <metric.icon className="h-6 w-6 text-primary" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Rankings Section */}
+            <div className="bg-card border border-border rounded-lg">
+              <div className="px-4 sm:px-6 py-4 sm:py-6 border-b border-border">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground font-work-sans">Job Rankings</h2>
+                    <p className="text-sm text-muted-foreground font-open-sans">Manage your hiring campaigns</p>
+                  </div>
+                  <button
+                    onClick={handleCreateRanking}
+                    className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-work-sans font-semibold"
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span>New Ranking</span>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                    <Input
+                      placeholder="Search rankings by title, position, or description..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-12 pr-4 py-3 bg-muted border border-border rounded-lg text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+                    <Select value={filterPosition} onValueChange={setFilterPosition}>
+                      <SelectTrigger className="w-full sm:w-48 h-12 bg-muted border border-border rounded-lg hover:border-primary/50 transition-colors">
+                        <SelectValue placeholder="Filter by position" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border border-border rounded-lg">
+                        <SelectItem value="all">All Positions</SelectItem>
+                        <SelectItem value="kitchen-helper">Kitchen Helper</SelectItem>
+                        <SelectItem value="server/waiter">Server/Waiter</SelectItem>
+                        <SelectItem value="housekeeping">Housekeeping</SelectItem>
+                        <SelectItem value="cashier">Cashier</SelectItem>
+                        <SelectItem value="barista">Barista</SelectItem>
+                        <SelectItem value="gardener">Gardener</SelectItem>
+                        <SelectItem value="receptionist">Receptionist</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger className="w-full sm:w-40 h-12 bg-muted border border-border rounded-lg hover:border-primary/50 transition-colors">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border border-border rounded-lg">
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-full sm:w-52 h-12 bg-muted border border-border rounded-lg hover:border-primary/50 transition-colors">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border border-border rounded-lg">
+                        <SelectItem value="newest">Newest First</SelectItem>
+                        <SelectItem value="oldest">Oldest First</SelectItem>
+                        <SelectItem value="title-az">Title (A-Z)</SelectItem>
+                        <SelectItem value="title-za">Title (Z-A)</SelectItem>
+                        <SelectItem value="position-az">Position (A-Z)</SelectItem>
+                        <SelectItem value="position-za">Position (Z-A)</SelectItem>
+                        <SelectItem value="most-applications">Most Applications</SelectItem>
+                        <SelectItem value="least-applications">Least Applications</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {(searchQuery.trim() ||
+                      filterPosition !== "all" ||
+                      filterStatus !== "all" ||
+                      sortBy !== "newest") && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSearchQuery("")
+                          setFilterPosition("all")
+                          setFilterStatus("all")
+                          setSortBy("newest")
+                        }}
+                        className="flex items-center gap-2 h-12 px-6 border border-border rounded-lg text-foreground hover:bg-muted transition-colors font-work-sans"
+                      >
+                        <X className="w-4 h-4" />
+                        Clear Filters
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="text-sm text-muted-foreground font-open-sans">
+                    Showing {filteredAndSortedRankings.length} of {rankings.length} rankings
+                  </div>
+                </div>
+              </div>
+
+              {/* Rankings List */}
+              {loading ? (
+                <div className="p-12 text-center">
+                  <div className="w-12 h-12 border-4 border-border border-t-primary rounded-full animate-spin mx-auto"></div>
+                  <p className="text-muted-foreground mt-6 font-open-sans">Loading rankings...</p>
+                </div>
+              ) : filteredAndSortedRankings.length === 0 ? (
+                <div className="p-12 text-center">
+                  {rankings.length === 0 ? (
+                    <>
+                      <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center mx-auto mb-6">
+                        <BarChart3 className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground mb-3 font-work-sans">No rankings yet</h3>
+                      <p className="text-muted-foreground mb-8 font-open-sans max-w-md mx-auto">
+                        Create your first ranking to start hiring with AI-powered candidate evaluation
+                      </p>
+                      <button
+                        onClick={handleCreateRanking}
+                        className="flex items-center space-x-2 px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors mx-auto font-work-sans font-semibold"
+                      >
+                        <Plus className="h-5 w-5" />
+                        <span>Create First Ranking</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center mx-auto mb-6">
+                        <Search className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground mb-3 font-work-sans">
+                        No rankings match your filters
+                      </h3>
+                      <p className="text-muted-foreground mb-8 font-open-sans max-w-md mx-auto">
+                        Try adjusting your search criteria or clear the filters to see all rankings
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSearchQuery("")
+                          setFilterPosition("all")
+                          setFilterStatus("all")
+                          setSortBy("newest")
+                        }}
+                        className="flex items-center gap-2 mx-auto px-8 py-4 border border-border rounded-lg text-foreground hover:bg-muted transition-colors font-work-sans font-semibold"
+                      >
+                        <X className="w-5 h-5" />
+                        Clear All Filters
+                      </Button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {filteredAndSortedRankings.map((ranking) => (
+                    <div key={ranking.id} className="hover:bg-muted/50 transition-colors">
+                      <div className="p-4 sm:p-6 cursor-pointer" onClick={() => handleViewApplications(ranking)}>
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                          <div className="flex-1 w-full">
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-3">
+                              <h3 className="text-lg font-bold text-foreground font-work-sans">{ranking.title}</h3>
+                              <div className="flex flex-wrap gap-2">
+                                <span
+                                  className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                                    ranking.is_active
+                                      ? "bg-primary/10 text-primary"
+                                      : "bg-muted text-muted-foreground"
+                                  }`}
+                                >
+                                  {ranking.is_active ? "Active" : "Inactive"}
+                                </span>
+                                <span className="px-3 py-1 text-xs font-semibold bg-muted text-foreground rounded-full capitalize">
+                                  {ranking.position?.replace("/", " / ") || "Position"}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-muted-foreground mb-3 font-open-sans">{ranking.description}</p>
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-muted-foreground font-open-sans">
+                              <span>Created {new Date(ranking.created_at).toLocaleDateString()}</span>
+                              <span className="hidden sm:inline">•</span>
+                              <span>{ranking.applications_count || 0} applications</span>
+                            </div>
+                          </div>
+                          <div
+                            className="flex items-center space-x-2 w-full sm:w-auto justify-end"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() => handleCopyLink(ranking.application_link_id)}
+                              className="p-3 hover:bg-muted rounded-lg transition-colors"
+                              title="Copy application link"
+                            >
+                              <Link2 className="h-4 w-4 text-foreground" />
+                            </button>
+                            <button
+                              onClick={() => handleEditRanking(ranking)}
+                              className="p-3 hover:bg-muted rounded-lg transition-colors"
+                              title="Edit ranking"
+                            >
+                              <Edit className="h-4 w-4 text-foreground" />
+                            </button>
+                            <button
+                              onClick={() => handleViewApplications(ranking)}
+                              className="p-3 hover:bg-muted rounded-lg transition-colors"
+                              title="View applications"
+                            >
+                              <Eye className="h-4 w-4 text-foreground" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRanking(ranking)}
+                              className="p-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Delete ranking"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Mobile Sidebar */}
         {showMobileSidebar && (
           <div className="fixed inset-0 z-50 lg:hidden">
@@ -471,354 +694,40 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
           </div>
         )}
+      </div>
 
-        {/* Main Content */}
-        <div className="p-4 sm:p-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Main Content Area */}
-            <div className="flex-1">
-              {/* Metrics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-                {metrics.map((metric, index) => (
-                  <div
-                    key={index}
-                    onClick={() => handleMetricClick(metric.title)}
-                    className="bg-card border border-border rounded-lg p-6 cursor-pointer hover:border-primary/50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2 font-work-sans">{metric.title}</p>
-                        <p className="text-3xl font-bold text-foreground font-work-sans">{metric.value}</p>
-                      </div>
-                      <div className="p-4 bg-muted rounded-lg">
-                        <metric.icon className="h-6 w-6 text-primary" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Rankings Section */}
-              <div className="bg-card border border-border rounded-lg">
-                <div className="px-4 sm:px-6 py-4 sm:py-6 border-b border-border">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                    <div>
-                      <h2 className="text-xl sm:text-2xl font-bold text-foreground font-work-sans">Job Rankings</h2>
-                      <p className="text-sm text-muted-foreground font-open-sans">Manage your hiring campaigns</p>
-                    </div>
-                    <button
-                      onClick={handleCreateRanking}
-                      className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-work-sans font-semibold"
-                    >
-                      <Plus className="h-5 w-5" />
-                      <span>New Ranking</span>
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                      <Input
-                        placeholder="Search rankings by title, position, or description..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 pr-4 py-3 bg-muted border border-border rounded-lg text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                      />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
-                      <Select value={filterPosition} onValueChange={setFilterPosition}>
-                        <SelectTrigger className="w-full sm:w-48 h-12 bg-muted border border-border rounded-lg hover:border-primary/50 transition-colors">
-                          <SelectValue placeholder="Filter by position" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border border-border rounded-lg">
-                          <SelectItem value="all">All Positions</SelectItem>
-                          <SelectItem value="kitchen-helper">Kitchen Helper</SelectItem>
-                          <SelectItem value="server/waiter">Server/Waiter</SelectItem>
-                          <SelectItem value="housekeeping">Housekeeping</SelectItem>
-                          <SelectItem value="cashier">Cashier</SelectItem>
-                          <SelectItem value="barista">Barista</SelectItem>
-                          <SelectItem value="gardener">Gardener</SelectItem>
-                          <SelectItem value="receptionist">Receptionist</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger className="w-full sm:w-40 h-12 bg-muted border border-border rounded-lg hover:border-primary/50 transition-colors">
-                          <SelectValue placeholder="Filter by status" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border border-border rounded-lg">
-                          <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="w-full sm:w-52 h-12 bg-muted border border-border rounded-lg hover:border-primary/50 transition-colors">
-                          <SelectValue placeholder="Sort by" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border border-border rounded-lg">
-                          <SelectItem value="newest">Newest First</SelectItem>
-                          <SelectItem value="oldest">Oldest First</SelectItem>
-                          <SelectItem value="title-az">Title (A-Z)</SelectItem>
-                          <SelectItem value="title-za">Title (Z-A)</SelectItem>
-                          <SelectItem value="position-az">Position (A-Z)</SelectItem>
-                          <SelectItem value="position-za">Position (Z-A)</SelectItem>
-                          <SelectItem value="most-applications">Most Applications</SelectItem>
-                          <SelectItem value="least-applications">Least Applications</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      {(searchQuery.trim() ||
-                        filterPosition !== "all" ||
-                        filterStatus !== "all" ||
-                        sortBy !== "newest") && (
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSearchQuery("")
-                            setFilterPosition("all")
-                            setFilterStatus("all")
-                            setSortBy("newest")
-                          }}
-                          className="flex items-center gap-2 h-12 px-6 border border-border rounded-lg text-foreground hover:bg-muted transition-colors font-work-sans"
-                        >
-                          <X className="w-4 h-4" />
-                          Clear Filters
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="text-sm text-muted-foreground font-open-sans">
-                      Showing {filteredAndSortedRankings.length} of {rankings.length} rankings
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rankings List */}
-                {loading ? (
-                  <div className="p-12 text-center">
-                    <div className="w-12 h-12 border-4 border-border border-t-primary rounded-full animate-spin mx-auto"></div>
-                    <p className="text-muted-foreground mt-6 font-open-sans">Loading rankings...</p>
-                  </div>
-                ) : filteredAndSortedRankings.length === 0 ? (
-                  <div className="p-12 text-center">
-                    {rankings.length === 0 ? (
-                      <>
-                        <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center mx-auto mb-6">
-                          <BarChart3 className="h-10 w-10 text-muted-foreground" />
-                        </div>
-                        <h3 className="text-xl font-bold text-foreground mb-3 font-work-sans">No rankings yet</h3>
-                        <p className="text-muted-foreground mb-8 font-open-sans max-w-md mx-auto">
-                          Create your first ranking to start hiring with AI-powered candidate evaluation
-                        </p>
-                        <button
-                          onClick={handleCreateRanking}
-                          className="flex items-center space-x-2 px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors mx-auto font-work-sans font-semibold"
-                        >
-                          <Plus className="h-5 w-5" />
-                          <span>Create First Ranking</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center mx-auto mb-6">
-                          <Search className="h-10 w-10 text-muted-foreground" />
-                        </div>
-                        <h3 className="text-xl font-bold text-foreground mb-3 font-work-sans">
-                          No rankings match your filters
-                        </h3>
-                        <p className="text-muted-foreground mb-8 font-open-sans max-w-md mx-auto">
-                          Try adjusting your search criteria or clear the filters to see all rankings
-                        </p>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSearchQuery("")
-                            setFilterPosition("all")
-                            setFilterStatus("all")
-                            setSortBy("newest")
-                          }}
-                          className="flex items-center gap-2 mx-auto px-8 py-4 border border-border rounded-lg text-foreground hover:bg-muted transition-colors font-work-sans font-semibold"
-                        >
-                          <X className="w-5 h-5" />
-                          Clear All Filters
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {filteredAndSortedRankings.map((ranking) => (
-                      <div key={ranking.id} className="hover:bg-muted/50 transition-colors">
-                        <div className="p-4 sm:p-6 cursor-pointer" onClick={() => handleViewApplications(ranking)}>
-                          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                            <div className="flex-1 w-full">
-                              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-3">
-                                <h3 className="text-lg font-bold text-foreground font-work-sans">{ranking.title}</h3>
-                                <div className="flex flex-wrap gap-2">
-                                  <span
-                                    className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                                      ranking.is_active
-                                        ? "bg-primary/10 text-primary"
-                                        : "bg-muted text-muted-foreground"
-                                    }`}
-                                  >
-                                    {ranking.is_active ? "Active" : "Inactive"}
-                                  </span>
-                                  <span className="px-3 py-1 text-xs font-semibold bg-muted text-foreground rounded-full capitalize">
-                                    {ranking.position?.replace("/", " / ") || "Position"}
-                                  </span>
-                                </div>
-                              </div>
-                              <p className="text-muted-foreground mb-3 font-open-sans">{ranking.description}</p>
-                              <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-muted-foreground font-open-sans">
-                                <span>Created {new Date(ranking.created_at).toLocaleDateString()}</span>
-                                <span className="hidden sm:inline">•</span>
-                                <span>{ranking.applications_count || 0} applications</span>
-                              </div>
-                            </div>
-                            <div
-                              className="flex items-center space-x-2 w-full sm:w-auto justify-end"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                onClick={() => handleCopyLink(ranking.application_link_id)}
-                                className="p-3 hover:bg-muted rounded-lg transition-colors"
-                                title="Copy application link"
-                              >
-                                <Link2 className="h-4 w-4 text-foreground" />
-                              </button>
-                              <button
-                                onClick={() => handleEditRanking(ranking)}
-                                className="p-3 hover:bg-muted rounded-lg transition-colors"
-                                title="Edit ranking"
-                              >
-                                <Edit className="h-4 w-4 text-foreground" />
-                              </button>
-                              <button
-                                onClick={() => handleViewApplications(ranking)}
-                                className="p-3 hover:bg-muted rounded-lg transition-colors"
-                                title="View applications"
-                              >
-                                <Eye className="h-4 w-4 text-foreground" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteRanking(ranking)}
-                                className="p-3 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                title="Delete ranking"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="hidden lg:block w-80 space-y-6">
-              {/* Quick Actions */}
-              <div className="bg-card border border-border rounded-lg p-6">
-                <h3 className="text-xl font-bold text-foreground mb-2 font-work-sans">Quick Actions</h3>
-                <p className="text-sm text-muted-foreground mb-6 font-open-sans">Common tasks and shortcuts</p>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={handleCreateRanking}
-                    className="flex items-center space-x-3 w-full p-4 text-left hover:bg-muted rounded-lg transition-colors group"
-                  >
-                    <Plus className="h-5 w-5 text-primary" />
-                    <span className="font-medium text-foreground font-work-sans">Create New Ranking</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (rankings.length > 0) {
-                        handleViewApplications(rankings[0])
-                      }
-                    }}
-                    disabled={rankings.length === 0}
-                    className="flex items-center space-x-3 w-full p-4 text-left hover:bg-muted rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
-                  >
-                    <Users className="h-5 w-5 text-primary" />
-                    <span className="font-medium text-foreground font-work-sans">View All Applications</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-                  </button>
-                  <button
-                    onClick={handleShowVideoCalls}
-                    className="flex items-center space-x-3 w-full p-4 text-left hover:bg-muted rounded-lg transition-colors group"
-                  >
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <span className="font-medium text-foreground font-work-sans">Manage Video Calls</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-                  </button>
-                  <button className="flex items-center space-x-3 w-full p-4 text-left hover:bg-muted rounded-lg transition-colors group">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    <span className="font-medium text-foreground font-work-sans">Analytics Report</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Getting Started */}
-              <div className="bg-card border border-border rounded-lg p-6">
-                <h3 className="text-xl font-bold text-foreground mb-6 font-work-sans">Getting Started</h3>
-
-                <div className="space-y-6">
-                  <div className="flex items-start space-x-4">
-                    <div
-                      className={`flex-shrink-0 w-8 h-8 ${rankings.length > 0 ? "bg-primary text-primary-foreground" : "bg-primary text-primary-foreground"} text-sm font-bold rounded-full flex items-center justify-center`}
-                    >
-                      {rankings.length > 0 ? "✓" : "1"}
-                    </div>
-                    <div>
-                      <p
-                        className={`font-bold ${rankings.length > 0 ? "text-primary" : "text-foreground"} font-work-sans`}
-                      >
-                        Create a ranking
-                      </p>
-                      <p className="text-sm text-muted-foreground font-open-sans">
-                        Set up criteria and questions for a position
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-muted text-muted-foreground text-sm font-bold rounded-full flex items-center justify-center">
-                      2
-                    </div>
-                    <div>
-                      <p className="font-bold text-muted-foreground font-work-sans">Share application link</p>
-                      <p className="text-sm text-muted-foreground font-open-sans">
-                        Send the link to candidates to apply
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-muted text-muted-foreground text-sm font-bold rounded-full flex items-center justify-center">
-                      3
-                    </div>
-                    <div>
-                      <p className="font-bold text-muted-foreground font-work-sans">Review results</p>
-                      <p className="text-sm text-muted-foreground font-open-sans">AI will rank and score candidates</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {showChatbot && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-start md:justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/30 md:hidden"
+            onClick={() => setShowChatbot(false)}
+          />
+          
+          {/* Modal Container */}
+          <div className="relative z-51 w-full h-screen md:h-screen md:w-96 md:rounded-l-xl shadow-2xl flex flex-col bg-background md:mt-0 md:mr-0">
+            <AIChatbot onClose={() => setShowChatbot(false)} />
           </div>
         </div>
+      )}
 
-        {/* AI Overlay */}
-        <AIOverlay />
-      </div>
+      <button
+        onClick={() => setShowChatbot(!showChatbot)}
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all duration-200 flex items-center justify-center hover:scale-110 active:scale-95"
+        title={showChatbot ? "Close chatbot" : "Open chatbot"}
+      >
+        {showChatbot ? (
+          <X className="w-6 h-6" />
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-1">
+            <div className="w-1 h-1 bg-current rounded-full" />
+            <div className="flex gap-1">
+              <div className="w-1 h-1 bg-current rounded-full" />
+              <div className="w-1 h-1 bg-current rounded-full" />
+            </div>
+          </div>
+        )}
+      </button>
     </div>
   )
 }
