@@ -244,7 +244,7 @@ export class AdvancedOCRService {
 
       let base64: string
 
-      if (processFile.type === "application/pdf" || processFile.name.toLowerCase().endsWith(".pdf")) {
+      if (processFile.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
         try {
           base64 = await this.fileToBase64ServerSide(processFile)
           return await this.extractFromPDFEnhanced(base64, processFile.name)
@@ -987,50 +987,204 @@ export class AdvancedOCRService {
   }
 
   private extractLocationAdvanced(text: string): string {
+    console.log("[v0] Starting comprehensive location extraction with 3000+ global cities")
     const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0)
     
-    for (const line of lines.slice(0, 15)) {
+    // Score-based location detection for maximum accuracy
+    const locationCandidates: Array<{ location: string; score: number; line: number }> = []
+    
+    for (let i = 0; i < Math.min(lines.length, 20); i++) {
+      const line = lines[i]
       const lower = line.toLowerCase()
       
-      // Check against world cities database
-      for (const city of this.CITIES_COUNTRIES) {
-        if (lower.includes(city)) {
-          // Extract the full location context (city, state, country)
-          const cityIndex = lower.indexOf(city)
-          const contextStart = Math.max(0, cityIndex - 20)
-          const contextEnd = Math.min(line.length, cityIndex + city.length + 30)
-          const context = line.substring(contextStart, contextEnd).trim()
+      // Skip obvious non-locations (names, job titles, section headers)
+      if (this.isDefinitelyNotLocation(line)) continue
+      
+      // Split by common delimiters
+      const parts = line.split(/[,;|]/).map(p => p.trim())
+      
+      for (const part of parts) {
+        const words = part.toLowerCase().split(/\s+/).filter(w => w.length > 0)
+        
+        // Try 1-word, 2-word, 3-word, and 4-word combinations
+        for (let j = 0; j < words.length; j++) {
+          // 1-word cities
+          const oneWord = words[j].replace(/[^\w]/g, '')
+          if (oneWord.length >= 3 && this.CITIES_COUNTRIES.has(oneWord)) {
+            const score = this.calculateLocationScore(oneWord, part, i, text, 1)
+            if (score > 30) {
+              locationCandidates.push({ 
+                location: this.formatCityName(part), 
+                score, 
+                line: i 
+              })
+            }
+          }
           
-          // Clean up and return
-          const cleaned = context.replace(/^[^\w]+|[^\w]+$/g, '')
-          if (cleaned.length > 2 && cleaned.length < 100) {
-            console.log("[v0] Location detected from world database:", cleaned)
-            return cleaned
+          // 2-word cities (e.g., "new york", "san francisco", "quezon city")
+          if (j < words.length - 1) {
+            const twoWords = `${words[j].replace(/[^\w]/g, '')} ${words[j + 1].replace(/[^\w]/g, '')}`
+            if (this.CITIES_COUNTRIES.has(twoWords)) {
+              const score = this.calculateLocationScore(twoWords, part, i, text, 2)
+              if (score > 30) {
+                locationCandidates.push({ 
+                  location: this.formatCityName(part), 
+                  score, 
+                  line: i 
+                })
+              }
+            }
+          }
+          
+          // 3-word cities (e.g., "saint john's", "new south wales", "san luis potosi")
+          if (j < words.length - 2) {
+            const threeWords = `${words[j].replace(/[^\w]/g, '')} ${words[j + 1].replace(/[^\w]/g, '')} ${words[j + 2].replace(/[^\w]/g, '')}`
+            if (this.CITIES_COUNTRIES.has(threeWords)) {
+              const score = this.calculateLocationScore(threeWords, part, i, text, 3)
+              if (score > 30) {
+                locationCandidates.push({ 
+                  location: this.formatCityName(part), 
+                  score, 
+                  line: i 
+                })
+              }
+            }
+          }
+          
+          // 4-word cities (rare but exist, e.g., "island garden city of samal")
+          if (j < words.length - 3) {
+            const fourWords = `${words[j].replace(/[^\w]/g, '')} ${words[j + 1].replace(/[^\w]/g, '')} ${words[j + 2].replace(/[^\w]/g, '')} ${words[j + 3].replace(/[^\w]/g, '')}`
+            if (this.CITIES_COUNTRIES.has(fourWords)) {
+              const score = this.calculateLocationScore(fourWords, part, i, text, 4)
+              if (score > 30) {
+                locationCandidates.push({ 
+                  location: this.formatCityName(part), 
+                  score, 
+                  line: i 
+                })
+              }
+            }
           }
         }
       }
     }
-
-    // Fallback to pattern matching
-    const locationPatterns = [
-      /([A-Z][a-z]+(?:,\s*[A-Z]{2})?(?:\s+\d{5})?)/g,
-      /([A-Z][a-z]+,\s*[A-Z][a-z]+)/g,
-      /([A-Z][a-z]+\s+[A-Z][a-z]+,\s*[A-Z]{2})/g,
-    ]
-
-    for (const pattern of locationPatterns) {
-      const matches = text.match(pattern) || []
-      for (const match of matches) {
-        const lower = match.toLowerCase()
-        if (this.CITIES_COUNTRIES.has(lower.split(',')[0].trim())) {
-          console.log("[v0] Location detected via pattern matching:", match)
-          return match.trim()
-        }
-      }
+    
+    // Sort by score and return best match
+    locationCandidates.sort((a, b) => b.score - a.score)
+    
+    if (locationCandidates.length > 0 && locationCandidates[0].score > 50) {
+      console.log("[v0] High-confidence location detected:", locationCandidates[0].location, "Score:", locationCandidates[0].score)
+      return locationCandidates[0].location
     }
-
-    console.log("[v0] No location detected")
+    
+    if (locationCandidates.length > 0) {
+      console.log("[v0] Location detected:", locationCandidates[0].location, "Score:", locationCandidates[0].score)
+      return locationCandidates[0].location
+    }
+    
+    console.log("[v0] No location detected after comprehensive search")
     return ""
+  }
+  
+  private calculateLocationScore(cityMatch: string, fullLine: string, lineIndex: number, fullText: string, wordCount: number): number {
+    let score = 0
+    const lower = fullLine.toLowerCase()
+    
+    // Base score for being in city database
+    score += 50
+    
+    // Bonus for multi-word cities (more specific)
+    if (wordCount >= 2) score += 20
+    if (wordCount >= 3) score += 10
+    
+    // Bonus for early appearance in document
+    if (lineIndex <= 3) score += 30
+    else if (lineIndex <= 5) score += 20
+    else if (lineIndex <= 10) score += 10
+    
+    // Bonus for location context indicators
+    const locationIndicators = [
+      "address", "location", "city", "state", "province", "country", "region",
+      "lives in", "based in", "from", "residence", "residing"
+    ]
+    if (locationIndicators.some(ind => lower.includes(ind))) {
+      score += 25
+    }
+    
+    // Bonus for having country/province context
+    if (/,\s*[A-Z]{2,}/.test(fullLine)) score += 15  // State/country abbreviation
+    if (/philippines/i.test(fullLine)) score += 20  // Philippines specifically mentioned
+    
+    // Penalties for name-like context
+    const wordsInLine = fullLine.split(/\s+/)
+    const cityIndex = wordsInLine.findIndex(w => cityMatch.includes(w.toLowerCase()))
+    
+    if (cityIndex > 0) {
+      const prevWord = wordsInLine[cityIndex - 1].toLowerCase().replace(/[^\w]/g, '')
+      if (this.COMMON_FIRST_NAMES.has(prevWord)) score -= 40
+    }
+    
+    if (cityIndex < wordsInLine.length - wordCount) {
+      const nextWord = wordsInLine[cityIndex + wordCount]?.toLowerCase().replace(/[^\w]/g, '')
+      if (this.COMMON_LAST_NAMES.has(nextWord)) score -= 40
+    }
+    
+    // Heavy penalty if line contains email or phone
+    if (/@/.test(fullLine) || /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(fullLine)) {
+      score -= 30
+    }
+    
+    // Penalty for job title context
+    if (this.JOB_TITLES.has(lower)) score -= 50
+    
+    return score
+  }
+  
+  private formatCityName(rawLocation: string): string {
+    // Clean up the location string
+    let cleaned = rawLocation
+      .replace(/^[^\w]+|[^\w,\s-]+$/g, '')  // Remove leading/trailing non-word chars except comma, space, dash
+      .replace(/\s+/g, ' ')  // Normalize spaces
+      .trim()
+    
+    // Limit length
+    if (cleaned.length > 100) {
+      cleaned = cleaned.substring(0, 100)
+    }
+    
+    // Capitalize properly
+    const words = cleaned.split(/\s+/)
+    const capitalized = words.map(word => {
+      if (word.length <= 2) return word.toUpperCase()  // Abbreviations
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    }).join(' ')
+    
+    return capitalized
+  }
+  
+  private isDefinitelyNotLocation(line: string): boolean {
+    const lower = line.toLowerCase()
+    
+    // Skip obvious section headers
+    const sectionHeaders = [
+      "contact details", "personal information", "resume", "curriculum vitae",
+      "objective", "summary", "experience", "education", "skills", "references",
+      "qualifications", "profile", "work history", "employment"
+    ]
+    if (sectionHeaders.some(header => lower === header || lower.startsWith(header + ":"))) {
+      return true
+    }
+    
+    // Skip email lines
+    if (/@\w+\.\w+/.test(line)) return true
+    
+    // Skip phone-only lines
+    if (/^\+?\d[\d\s().-]{8,}$/.test(line)) return true
+    
+    // Skip very short or very long lines
+    if (line.length < 3 || line.length > 150) return true
+    
+    return false
   }
 
   private extractSkillsAdvanced(text: string): string[] {
