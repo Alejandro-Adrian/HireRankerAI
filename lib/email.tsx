@@ -1,26 +1,16 @@
-import { Resend } from "resend"
 import nodemailer from "nodemailer"
 import { config } from "dotenv"
+import { sendEmailViaBrevo } from "./brevo-email"
 
 if (typeof window === "undefined") {
   // Load .env file in all environments (development and production)
   config()
 }
 
-let resendClient: Resend | null = null
-
-function getResendClient(): Resend {
-  if (!resendClient) {
-    const apiKey = process.env.RESEND_API_KEY
-    if (!apiKey) {
-      throw new Error("RESEND_API_KEY environment variable is required")
-    }
-    resendClient = new Resend(apiKey)
-  }
-  return resendClient
-}
-
 let transporter: nodemailer.Transporter | null = null
+
+// Note: The Resend client and Nodemailer transporter are no longer used and can be removed in a future refactor.
+// For now, they are kept to maintain compatibility with existing code, but they are effectively dead code.
 
 function getTransporter() {
   if (!transporter) {
@@ -50,39 +40,7 @@ interface EmailOptions {
 }
 
 export async function sendEmail(options: EmailOptions) {
-  const { to, subject, html } = options
-
-  try {
-    console.log("[v0] 🚀 Starting email send via Resend API...")
-    console.log("[v0] 📧 To:", to)
-    console.log("[v0] 📝 Subject:", subject)
-
-    const resend = getResendClient()
-    const { data, error } = await resend.emails.send({
-      from: "HireRankerAI <noreply@resend.dev>",
-      to: [to],
-      subject: subject,
-      html: html,
-    })
-
-    if (error) {
-      console.error("[v0] ❌ Resend API error:", error)
-      if (error.message?.includes("403") || error.message?.includes("testing")) {
-        return {
-          success: false,
-          error:
-            "Email service is in testing mode. Please verify your email domain in Resend dashboard or contact support.",
-        }
-      }
-      return { success: false, error: error.message }
-    }
-
-    console.log("[v0] ✅ Email sent successfully via Resend API:", data?.id)
-    return { success: true, messageId: data?.id }
-  } catch (error) {
-    console.error("[v0] ❌ Resend email sending failed:", error)
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" }
-  }
+  return sendEmailViaBrevo(options)
 }
 
 export async function sendEmailLegacy(to: string, subject: string, html: string) {
@@ -90,28 +48,8 @@ export async function sendEmailLegacy(to: string, subject: string, html: string)
 }
 
 export async function testEmailConnection() {
-  try {
-    console.log("[v0] 🔍 Testing Resend API connection...")
-
-    const resend = getResendClient()
-    const { data, error } = await resend.emails.send({
-      from: "HireRankerAI <noreply@resend.dev>",
-      to: ["delivered@resend.dev"], // Use Resend's test email for connection testing
-      subject: "Connection Test",
-      html: "<p>Testing Resend API connection</p>",
-    })
-
-    if (error) {
-      console.error("[v0] ❌ Resend API connection test failed:", error)
-      return { success: false, error: error.message }
-    }
-
-    console.log("[v0] ✅ Resend API connection test successful")
-    return { success: true }
-  } catch (error) {
-    console.error("[v0] ❌ Resend API connection test failed:", error)
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" }
-  }
+  const { testBrevoConnection } = await import("./brevo-email")
+  return testBrevoConnection()
 }
 
 export function generateVerificationCode(): string {
