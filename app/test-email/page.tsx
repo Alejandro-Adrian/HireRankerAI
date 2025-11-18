@@ -39,11 +39,26 @@ export default function EmailTestPage() {
       })
       const data = await response.json()
       setBrevoConfig(data)
-      addLog("✓ Brevo configuration loaded")
+      
+      if (data.account?.error) {
+        console.error('[v0] ❌ Brevo Account Error:', data.account.error)
+        addLog(`✗ Account Error: ${data.account.error}`)
+      }
+      if (data.senders?.error) {
+        console.error('[v0] ❌ Brevo Senders Error:', data.senders.error)
+        addLog(`✗ Senders Error: ${data.senders.error}`)
+      }
+      
+      if (data.account?.success || data.senders?.success) {
+        addLog("✓ Brevo configuration loaded")
+      } else {
+        addLog("✗ Failed to load Brevo configuration - check console for details")
+      }
+      
       console.log('[v0] 📋 Brevo Configuration:', data)
     } catch (error) {
       console.error('[v0] ❌ Error checking Brevo config:', error)
-      addLog("✗ Failed to load Brevo configuration")
+      addLog(`✗ Failed to load Brevo configuration: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoadingConfig(false)
     }
@@ -184,6 +199,18 @@ export default function EmailTestPage() {
           
           {brevoConfig && (
             <div className="space-y-4">
+              {brevoConfig.account?.error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
+                  <h3 className="text-red-700 dark:text-red-400 font-semibold mb-2 flex items-center gap-2">
+                    <XCircle className="h-4 w-4" />
+                    Account Error
+                  </h3>
+                  <p className="text-sm text-red-600 dark:text-red-400 font-mono">
+                    {brevoConfig.account.error}
+                  </p>
+                </div>
+              )}
+              
               {brevoConfig.account?.success && (
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-4 rounded-lg">
                   <h3 className="text-emerald-700 dark:text-emerald-400 font-semibold mb-2 flex items-center gap-2">
@@ -192,6 +219,18 @@ export default function EmailTestPage() {
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     Email: {brevoConfig.account.account?.email || 'N/A'}
+                  </p>
+                </div>
+              )}
+              
+              {brevoConfig.senders?.error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
+                  <h3 className="text-red-700 dark:text-red-400 font-semibold mb-2 flex items-center gap-2">
+                    <XCircle className="h-4 w-4" />
+                    Senders Error
+                  </h3>
+                  <p className="text-sm text-red-600 dark:text-red-400 font-mono">
+                    {brevoConfig.senders.error}
                   </p>
                 </div>
               )}
