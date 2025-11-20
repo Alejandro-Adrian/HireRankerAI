@@ -1,26 +1,22 @@
 // Brevo Email Service using direct REST API calls
 // This implementation uses Brevo's REST API directly instead of the SDK to avoid build issues
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY || ''
+// Hardcoded Brevo API key (free public key)
+const BREVO_API_KEY = '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'
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 
-// Hardcoded sender configuration - these are verified in Brevo account
-const DEFAULT_SENDER_EMAIL = "adrianalejandro052004@gmail.com"
+// For Brevo free accounts, you need to verify your sender email first
+// Common default is to use the email associated with your Brevo account
+const DEFAULT_SENDER_EMAIL = "adrianalejandro052004@gmail.com" // Change this to your verified sender email
 const DEFAULT_SENDER_NAME = "HireRankerAI"
-
-if (!BREVO_API_KEY) {
-  console.error("[v0] ❌ BREVO_API_KEY environment variable is not set!")
-}
-console.log("[v0] 🔧 Brevo Configuration:")
-console.log("[v0] 📧 Sender Email:", DEFAULT_SENDER_EMAIL)
-console.log("[v0] 📧 Sender Name:", DEFAULT_SENDER_NAME)
-console.log("[v0] 🔑 API Key exists:", !!BREVO_API_KEY)
 
 interface EmailOptions {
   to: string
   subject: string
   html: string
   text?: string
+  senderName?: string
+  senderEmail?: string
 }
 
 interface BrevoResponse {
@@ -33,29 +29,22 @@ export async function sendEmailViaBrevo(options: EmailOptions): Promise<{ succes
     to, 
     subject, 
     html, 
-    text
+    text,
+    senderName = DEFAULT_SENDER_NAME, 
+    senderEmail = DEFAULT_SENDER_EMAIL 
   } = options
-
-  if (!BREVO_API_KEY) {
-    const error = "BREVO_API_KEY environment variable is not set"
-    console.error("[v0] ❌", error)
-    return {
-      success: false,
-      error
-    }
-  }
 
   try {
     console.log("[v0] 🚀 Starting email send via Brevo API...")
-    console.log("[v0] 📧 From:", DEFAULT_SENDER_EMAIL)
+    console.log("[v0] 📧 From:", senderEmail)
     console.log("[v0] 📧 To:", to)
     console.log("[v0] 📝 Subject:", subject)
 
     // Brevo API request body
     const requestBody = {
       sender: {
-        name: DEFAULT_SENDER_NAME,
-        email: DEFAULT_SENDER_EMAIL
+        name: senderName,
+        email: senderEmail
       },
       to: [
         {
@@ -164,14 +153,6 @@ export async function getBrevoAccountInfo(): Promise<{ success: boolean; account
   try {
     console.log("[v0] 🔍 Fetching Brevo account information...")
     
-    if (!BREVO_API_KEY) {
-      console.error("[v0] ❌ BREVO_API_KEY is not set")
-      return {
-        success: false,
-        error: "BREVO_API_KEY environment variable is not set. Please add it to your environment variables."
-      }
-    }
-    
     const response = await fetch('https://api.brevo.com/v3/account', {
       method: 'GET',
       headers: {
@@ -181,27 +162,16 @@ export async function getBrevoAccountInfo(): Promise<{ success: boolean; account
     })
 
     const responseText = await response.text()
-    console.log("[v0] 📥 Account info response status:", response.status)
     console.log("[v0] 📥 Account info response:", responseText)
 
     if (!response.ok) {
-      let errorMessage = `API returned ${response.status}`
-      try {
-        const errorData = JSON.parse(responseText)
-        errorMessage = errorData.message || errorData.error || errorMessage
-        console.error("[v0] ❌ Brevo API Error:", JSON.stringify(errorData, null, 2))
-      } catch (e) {
-        console.error("[v0] ❌ Brevo API Error (raw):", responseText)
-      }
-      
       return {
         success: false,
-        error: `Failed to get account info: ${errorMessage}`
+        error: `Failed to get account info: ${responseText}`
       }
     }
 
     const data = JSON.parse(responseText)
-    console.log("[v0] ✅ Brevo account info fetched successfully")
     return {
       success: true,
       account: data
@@ -219,14 +189,6 @@ export async function getBrevoSenders(): Promise<{ success: boolean; senders?: a
   try {
     console.log("[v0] 🔍 Fetching Brevo senders...")
     
-    if (!BREVO_API_KEY) {
-      console.error("[v0] ❌ BREVO_API_KEY is not set")
-      return {
-        success: false,
-        error: "BREVO_API_KEY environment variable is not set. Please add it to your environment variables."
-      }
-    }
-    
     const response = await fetch('https://api.brevo.com/v3/senders', {
       method: 'GET',
       headers: {
@@ -236,27 +198,16 @@ export async function getBrevoSenders(): Promise<{ success: boolean; senders?: a
     })
 
     const responseText = await response.text()
-    console.log("[v0] 📥 Senders response status:", response.status)
     console.log("[v0] 📥 Senders response:", responseText)
 
     if (!response.ok) {
-      let errorMessage = `API returned ${response.status}`
-      try {
-        const errorData = JSON.parse(responseText)
-        errorMessage = errorData.message || errorData.error || errorMessage
-        console.error("[v0] ❌ Brevo API Error:", JSON.stringify(errorData, null, 2))
-      } catch (e) {
-        console.error("[v0] ❌ Brevo API Error (raw):", responseText)
-      }
-      
       return {
         success: false,
-        error: `Failed to get senders: ${errorMessage}`
+        error: `Failed to get senders: ${responseText}`
       }
     }
 
     const data = JSON.parse(responseText)
-    console.log("[v0] ✅ Brevo senders fetched successfully:", data.senders?.length || 0, "senders")
     return {
       success: true,
       senders: data.senders || []
