@@ -1,7 +1,9 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Upload, FileText, ImageIcon, CheckCircle, XCircle, RefreshCw, AlertTriangle } from 'lucide-react'
+import { Upload, FileText, ImageIcon, CheckCircle, RefreshCw, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,7 +37,7 @@ export default function AIParserTestPage() {
     }
   }
 
-  const parseDocument = async (method: 'ocr' | 'ai' | 'hybrid' | 'direct' | 'simple') => {
+  const parseDocument = async (method: "ocr" | "ai" | "hybrid" | "direct" | "simple") => {
     if (!selectedFile) {
       addLog("No file selected")
       return
@@ -51,7 +53,7 @@ export default function AIParserTestPage() {
 
       const endpoint = `/api/test-parse-${method}`
       addLog(`Uploading to ${endpoint}...`)
-      
+
       const response = await fetch(endpoint, {
         method: "POST",
         body: formData,
@@ -102,8 +104,8 @@ export default function AIParserTestPage() {
   }
 
   const getFileIcon = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase()
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) {
+    const ext = fileName.split(".").pop()?.toLowerCase()
+    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext || "")) {
       return <ImageIcon className="h-8 w-8 text-blue-500" />
     }
     return <FileText className="h-8 w-8 text-emerald-500" />
@@ -148,19 +150,19 @@ export default function AIParserTestPage() {
             <dl className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Name:</dt>
-                <dd className="font-medium text-foreground">{result.data.applicant_name || 'N/A'}</dd>
+                <dd className="font-medium text-foreground">{result.data.applicant_name || "N/A"}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Email:</dt>
-                <dd className="font-medium text-foreground">{result.data.applicant_email || 'N/A'}</dd>
+                <dd className="font-medium text-foreground">{result.data.applicant_email || "N/A"}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Phone:</dt>
-                <dd className="font-medium text-foreground">{result.data.applicant_phone || 'N/A'}</dd>
+                <dd className="font-medium text-foreground">{result.data.applicant_phone || "N/A"}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">City:</dt>
-                <dd className="font-medium text-foreground">{result.data.applicant_city || 'N/A'}</dd>
+                <dd className="font-medium text-foreground">{result.data.applicant_city || "N/A"}</dd>
               </div>
             </dl>
           </div>
@@ -178,7 +180,7 @@ export default function AIParserTestPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Education:</dt>
-                <dd className="font-medium text-foreground">{result.data.education || 'N/A'}</dd>
+                <dd className="font-medium text-foreground">{result.data.education || "N/A"}</dd>
               </div>
             </dl>
           </div>
@@ -189,10 +191,7 @@ export default function AIParserTestPage() {
             <h4 className="font-semibold text-foreground mb-2">Skills</h4>
             <div className="flex flex-wrap gap-2">
               {result.data.skills.map((skill: string, idx: number) => (
-                <span
-                  key={idx}
-                  className="px-2 py-1 bg-primary/10 text-primary text-sm rounded-md"
-                >
+                <span key={idx} className="px-2 py-1 bg-primary/10 text-primary text-sm rounded-md">
                   {skill}
                 </span>
               ))}
@@ -225,9 +224,7 @@ export default function AIParserTestPage() {
               <Upload className="h-5 w-5" />
               Upload Document
             </CardTitle>
-            <CardDescription>
-              Upload a resume file to test all parsing methods
-            </CardDescription>
+            <CardDescription>Upload a resume file to test all parsing methods</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -250,14 +247,14 @@ export default function AIParserTestPage() {
                   <div className="flex-1">
                     <p className="font-medium text-foreground">{selectedFile.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {(selectedFile.size / 1024).toFixed(2)} KB • {selectedFile.type || 'Unknown type'}
+                      {(selectedFile.size / 1024).toFixed(2)} KB • {selectedFile.type || "Unknown type"}
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
                   <Button
-                    onClick={() => parseDocument('ocr')}
+                    onClick={() => parseDocument("ocr")}
                     disabled={parsing.ocr}
                     variant="outline"
                     className="w-full"
@@ -268,12 +265,12 @@ export default function AIParserTestPage() {
                         OCR...
                       </>
                     ) : (
-                      'OCR'
+                      "OCR"
                     )}
                   </Button>
 
                   <Button
-                    onClick={() => parseDocument('ai')}
+                    onClick={() => parseDocument("ai")}
                     disabled={parsing.ai}
                     variant="outline"
                     className="w-full"
@@ -284,12 +281,12 @@ export default function AIParserTestPage() {
                         AI...
                       </>
                     ) : (
-                      'AI'
+                      "AI"
                     )}
                   </Button>
 
                   <Button
-                    onClick={() => parseDocument('hybrid')}
+                    onClick={() => parseDocument("hybrid")}
                     disabled={parsing.hybrid}
                     variant="outline"
                     className="w-full"
@@ -300,12 +297,12 @@ export default function AIParserTestPage() {
                         Hybrid...
                       </>
                     ) : (
-                      'Hybrid'
+                      "Hybrid"
                     )}
                   </Button>
 
                   <Button
-                    onClick={() => parseDocument('direct')}
+                    onClick={() => parseDocument("direct")}
                     disabled={parsing.direct}
                     variant="outline"
                     className="w-full"
@@ -316,12 +313,12 @@ export default function AIParserTestPage() {
                         Direct...
                       </>
                     ) : (
-                      'Direct PDF'
+                      "Direct PDF"
                     )}
                   </Button>
 
                   <Button
-                    onClick={() => parseDocument('simple')}
+                    onClick={() => parseDocument("simple")}
                     disabled={parsing.simple}
                     variant="outline"
                     className="w-full"
@@ -332,7 +329,7 @@ export default function AIParserTestPage() {
                         Simple...
                       </>
                     ) : (
-                      'Simple TXT'
+                      "Simple TXT"
                     )}
                   </Button>
                 </div>
@@ -346,40 +343,40 @@ export default function AIParserTestPage() {
             <TabsTrigger value="ocr">
               OCR
               {results.ocr && (
-                <span className={`ml-2 ${results.ocr.success ? 'text-emerald-500' : 'text-red-500'}`}>
-                  {results.ocr.success ? '✓' : '✗'}
+                <span className={`ml-2 ${results.ocr.success ? "text-emerald-500" : "text-red-500"}`}>
+                  {results.ocr.success ? "✓" : "✗"}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="ai">
               AI
               {results.ai && (
-                <span className={`ml-2 ${results.ai.success ? 'text-emerald-500' : 'text-red-500'}`}>
-                  {results.ai.success ? '✓' : '✗'}
+                <span className={`ml-2 ${results.ai.success ? "text-emerald-500" : "text-red-500"}`}>
+                  {results.ai.success ? "✓" : "✗"}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="hybrid">
               Hybrid
               {results.hybrid && (
-                <span className={`ml-2 ${results.hybrid.success ? 'text-emerald-500' : 'text-red-500'}`}>
-                  {results.hybrid.success ? '✓' : '✗'}
+                <span className={`ml-2 ${results.hybrid.success ? "text-emerald-500" : "text-red-500"}`}>
+                  {results.hybrid.success ? "✓" : "✗"}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="direct">
               Direct
               {results.direct && (
-                <span className={`ml-2 ${results.direct.success ? 'text-emerald-500' : 'text-red-500'}`}>
-                  {results.direct.success ? '✓' : '✗'}
+                <span className={`ml-2 ${results.direct.success ? "text-emerald-500" : "text-red-500"}`}>
+                  {results.direct.success ? "✓" : "✗"}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="simple">
               Simple
               {results.simple && (
-                <span className={`ml-2 ${results.simple.success ? 'text-emerald-500' : 'text-red-500'}`}>
-                  {results.simple.success ? '✓' : '✗'}
+                <span className={`ml-2 ${results.simple.success ? "text-emerald-500" : "text-red-500"}`}>
+                  {results.simple.success ? "✓" : "✗"}
                 </span>
               )}
             </TabsTrigger>
@@ -389,13 +386,9 @@ export default function AIParserTestPage() {
             <Card>
               <CardHeader>
                 <CardTitle>OCR Method Results</CardTitle>
-                <CardDescription>
-                  Uses OCR.space API with PDF-to-image conversion for PDFs
-                </CardDescription>
+                <CardDescription>Uses OCR.space API with PDF-to-image conversion for PDFs</CardDescription>
               </CardHeader>
-              <CardContent>
-                {renderResult(results.ocr, 'ocr')}
-              </CardContent>
+              <CardContent>{renderResult(results.ocr, "ocr")}</CardContent>
             </Card>
           </TabsContent>
 
@@ -403,13 +396,9 @@ export default function AIParserTestPage() {
             <Card>
               <CardHeader>
                 <CardTitle>AI Method Results</CardTitle>
-                <CardDescription>
-                  Uses Grok AI to understand and extract information (PDFs only)
-                </CardDescription>
+                <CardDescription>Uses Grok AI to understand and extract information (PDFs only)</CardDescription>
               </CardHeader>
-              <CardContent>
-                {renderResult(results.ai, 'ai')}
-              </CardContent>
+              <CardContent>{renderResult(results.ai, "ai")}</CardContent>
             </Card>
           </TabsContent>
 
@@ -417,13 +406,9 @@ export default function AIParserTestPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Hybrid Method Results</CardTitle>
-                <CardDescription>
-                  PDF text extraction with regex, falls back to OCR for images
-                </CardDescription>
+                <CardDescription>PDF text extraction with regex, falls back to OCR for images</CardDescription>
               </CardHeader>
-              <CardContent>
-                {renderResult(results.hybrid, 'hybrid')}
-              </CardContent>
+              <CardContent>{renderResult(results.hybrid, "hybrid")}</CardContent>
             </Card>
           </TabsContent>
 
@@ -435,9 +420,7 @@ export default function AIParserTestPage() {
                   Uses pdf-parse to extract text directly from PDFs without image conversion
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                {renderResult(results.direct, 'direct')}
-              </CardContent>
+              <CardContent>{renderResult(results.direct, "direct")}</CardContent>
             </Card>
           </TabsContent>
 
@@ -445,13 +428,9 @@ export default function AIParserTestPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Simple Text Parser</CardTitle>
-                <CardDescription>
-                  Basic regex-based parser for TXT files only
-                </CardDescription>
+                <CardDescription>Basic regex-based parser for TXT files only</CardDescription>
               </CardHeader>
-              <CardContent>
-                {renderResult(results.simple, 'simple')}
-              </CardContent>
+              <CardContent>{renderResult(results.simple, "simple")}</CardContent>
             </Card>
           </TabsContent>
         </Tabs>
@@ -461,11 +440,7 @@ export default function AIParserTestPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Event Logs</CardTitle>
-              <Button
-                onClick={() => setLogs([])}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={() => setLogs([])} variant="outline" size="sm">
                 Clear Logs
               </Button>
             </div>
