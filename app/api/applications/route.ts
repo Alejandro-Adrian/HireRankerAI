@@ -1,22 +1,23 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { simpleResumeParser } from "@/lib/simple-resume-parser"
+import { ocrResumeParser } from "@/lib/ocr-resume-parser"
 import { duplicateDetectionService } from "@/lib/duplicate-detection"
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("Starting application submission process")
+    console.log("[v0] ===== APPLICATION SUBMISSION START =====")
+    console.log("[v0] Starting application submission process")
 
     let supabase
     try {
       supabase = createClient()
-      console.log("Supabase client created successfully")
+      console.log("[v0] Supabase client created successfully")
 
       // Test database connection
-      const { data: testQuery, error: testError } = await supabase.from("rankings").select("count").limit(1)
+      const { error: testError } = await supabase.from("rankings").select("count").limit(1)
 
       if (testError) {
-        console.error("Database connection test failed:", testError)
+        console.error("[v0] Database connection test failed:", testError)
         return NextResponse.json(
           {
             error: "Database connection failed",
@@ -26,13 +27,13 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      console.log("Database connection verified")
+      console.log("[v0] Database connection verified")
     } catch (clientError) {
-      console.error("Failed to create Supabase client:", clientError)
+      console.error("[v0] Failed to create Supabase client:", clientError)
       return NextResponse.json(
         {
-          error: "Database client initialization failed",
-          details: clientError.message,
+          error: "Database initialization failed",
+          details: clientError instanceof Error ? clientError.message : "Unknown error",
         },
         { status: 500 },
       )
@@ -85,46 +86,59 @@ export async function POST(request: NextRequest) {
 
     let resumeData
     try {
-      console.log("Starting resume parsing...")
-      console.log("Resume file details:", {
+      console.log("[v0] Starting OCR-powered resume parsing with PDF-to-image conversion...")
+      console.log("[v0] Resume file details:", {
         name: resumeFile.name,
         size: resumeFile.size,
         type: resumeFile.type,
       })
 
-      resumeData = await simpleResumeParser.parseFromFile(resumeFile)
+      const parseTimeout = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Resume parsing timeout after 90 seconds')), 90000)
+      )
+      
+      const parsePromise = ocrResumeParser.parseFromFile(resumeFile)
+      
+      resumeData = await Promise.race([parsePromise, parseTimeout])
 
-      console.log("Resume parsing completed successfully")
-      console.log("Parsed resume data:", resumeData)
+      console.log("[v0] OCR resume parsing completed successfully")
+      console.log("[v0] Extracted name:", resumeData.name)
+      console.log("[v0] Extracted email:", resumeData.email)
+      console.log("[v0] Extracted city:", resumeData.location)
 
-      if (!resumeData.applicant_name || resumeData.applicant_name === "Name Not Found") {
-        console.error("Resume parsing incomplete - no name found")
+      if (!resumeData.name || resumeData.name === "Name Not Found" || resumeData.name === "Unknown Applicant") {
+        console.error("[v0] Resume parsing incomplete - no valid name found")
         return NextResponse.json(
           {
-            error: "Failed to extract information from resume",
+            error: "Failed to extract applicant name",
             details:
-              "Could not extract applicant name from resume. Please ensure the file contains readable text or is a clear image.",
+              "Could not extract a valid name from your resume. Please ensure the resume contains your full name clearly at the top.",
           },
           { status: 400 },
         )
       }
     } catch (parseError) {
-      console.error("Resume parsing failed:", parseError)
+      console.error("[v0] Resume parsing failed:", parseError)
+      console.error("[v0] Parse error stack:", parseError instanceof Error ? parseError.stack : 'No stack')
 
-      if (parseError.message.includes("PDF processing failed") && allFiles.length > 1) {
-        return NextResponse.json(
-          {
-            error: "PDF processing failed when mixed with other files",
-            details: "Please submit PDF files separately from images, or use only image files (JPG, PNG).",
-          },
-          { status: 400 },
-        )
+      let errorMessage = "Failed to parse resume"
+      let errorDetails = parseError instanceof Error ? parseError.message : "Unknown error"
+
+      if (errorDetails.includes("timeout")) {
+        errorMessage = "Resume processing timeout"
+        errorDetails = "OCR took too long to process your resume. Please try a smaller or simpler file."
+      } else if (errorDetails.includes("too large")) {
+        errorMessage = "File too large"
+        errorDetails = errorDetails
+      } else if (errorDetails.includes("Unsupported file type")) {
+        errorMessage = "Unsupported file format"
+        errorDetails = errorDetails
       }
 
       return NextResponse.json(
         {
-          error: "Failed to parse resume",
-          details: parseError.message,
+          error: errorMessage,
+          details: errorDetails,
         },
         { status: 500 },
       )
@@ -168,10 +182,10 @@ export async function POST(request: NextRequest) {
     if (existingApplications && existingApplications.length > 0) {
       const duplicateResult = await duplicateDetectionService.checkDuplicate(
         {
-          applicant_name: resumeData.applicant_name,
-          applicant_email: resumeData.applicant_email,
-          applicant_phone: resumeData.applicant_phone,
-          applicant_city: resumeData.applicant_city,
+          applicant_name: resumeData.name,
+          applicant_email: resumeData.email,
+          applicant_phone: resumeData.phone,
+          applicant_city: resumeData.location,
         },
         existingApplications,
       )
@@ -197,20 +211,20 @@ export async function POST(request: NextRequest) {
     // Creating application record...
     const applicationData = {
       ranking_id,
-      applicant_name: resumeData.applicant_name,
-      applicant_email: resumeData.applicant_email || `applicant-${Date.now()}@placeholder.com`,
-      applicant_phone: resumeData.applicant_phone || null,
-      applicant_city: resumeData.applicant_city || null,
+      applicant_name: resumeData.name,
+      applicant_email: resumeData.email || `applicant-${Date.now()}@placeholder.com`,
+      applicant_phone: resumeData.phone || null,
+      applicant_city: resumeData.location || null,
       hr_name: hr_name?.trim() || null,
       company_name: company_name?.trim() || null,
       status: "pending",
       submitted_at: new Date().toISOString(),
-      resume_summary: resumeData.resume_summary,
-      key_skills: resumeData.key_skills,
-      experience_years: resumeData.experience_years,
-      education_level: resumeData.education_level,
-      certifications: resumeData.certifications,
-      ocr_transcript: resumeData.raw_text || null,
+      resume_summary: resumeData.summary,
+      key_skills: resumeData.skills,
+      experience_years: resumeData.experience ? parseInt(resumeData.experience) || null : null,
+      education_level: resumeData.education,
+      certifications: [],
+      ocr_transcript: resumeData.rawText || null,
     }
 
     console.log("Application data to insert:", JSON.stringify(applicationData, null, 2))
@@ -350,11 +364,11 @@ export async function POST(request: NextRequest) {
               user_id: ranking.created_by,
               type: "application_submitted",
               title: "New Application Received",
-              message: `${resumeData.applicant_name} has submitted an application for ${ranking.title}${company_name ? ` at ${company_name}` : ""}`,
+              message: `${resumeData.name} has submitted an application for ${ranking.title}${company_name ? ` at ${company_name}` : ""}`,
               data: {
                 application_id: application.id,
                 ranking_id: ranking_id,
-                applicant_name: resumeData.applicant_name,
+                applicant_name: resumeData.name,
                 company_name: company_name,
                 hr_name: hr_name,
               },
@@ -374,15 +388,16 @@ export async function POST(request: NextRequest) {
       // Continue without failing - scoring can be done manually later
     }
 
+    console.log("[v0] ===== APPLICATION SUBMISSION END =====")
     return NextResponse.json(
       {
         message: "Application submitted successfully",
         application_id: application.id,
         extracted_info: {
-          name: resumeData.applicant_name,
-          email: resumeData.applicant_email || "Email not detected",
-          phone: resumeData.applicant_phone || "Phone not detected",
-          city: resumeData.applicant_city || "Location not detected",
+          name: resumeData.name,
+          email: resumeData.email || "Email not detected",
+          phone: resumeData.phone || "Phone not detected",
+          city: resumeData.location || "Location not detected",
         },
         ...(company_name &&
           hr_name && {
@@ -396,12 +411,13 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     )
   } catch (error) {
-    console.error("Error in applications API:", error)
-    console.error("Error stack:", error.stack)
+    console.error("[v0] ===== APPLICATION SUBMISSION ERROR =====")
+    console.error("[v0] Error in applications API:", error)
+    console.error("[v0] Error stack:", error instanceof Error ? error.stack : 'No stack')
     return NextResponse.json(
       {
         error: "Internal server error",
-        details: error.message,
+        details: error instanceof Error ? error.message : "Unknown error occurred",
       },
       { status: 500 },
     )

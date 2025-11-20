@@ -1,7 +1,7 @@
 "use client"
-import { useParams, useSearchParams, useRouter } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Phone, Copy, AlertCircle, CheckCircle } from 'lucide-react'
+import { Loader2, Phone, Copy, AlertCircle, CheckCircle } from "lucide-react"
 import { LiveTranscription } from "@/components/LiveTranscription"
 
 declare global {
@@ -25,6 +25,7 @@ export default function VideoCallPage() {
   const [copied, setCopied] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [showCompletionMessage, setShowCompletionMessage] = useState(false)
+  const [isEndingCall, setIsEndingCall] = useState(false)
   const [participantEmail, setParticipantEmail] = useState<string>("")
   const [participantName, setParticipantName] = useState<string>("")
 
@@ -36,20 +37,20 @@ export default function VideoCallPage() {
   const startRecording = async () => {
     try {
       console.log(`[v0] Starting audio recording for ${role}...`)
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-        } 
+        },
       })
-      
+
       const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4"
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
         audioBitsPerSecond: 128000,
       })
-      
+
       mediaRecorder.addEventListener("dataavailable", (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data)
@@ -75,14 +76,14 @@ export default function VideoCallPage() {
       console.log(`[v0] Stopping ${role} recording...`)
       setIsRecording(false)
       mediaRecorderRef.current.stop()
-      
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       if (audioChunksRef.current.length > 0) {
         const mimeType = mediaRecorderRef.current.mimeType
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
         const extension = mimeType.includes("webm") ? "webm" : "mp4"
-        
+
         const formData = new FormData()
         formData.append("audio", audioBlob, `recording-${meetingId}-${role}.${extension}`)
         formData.append("sessionId", meetingId)
@@ -91,7 +92,7 @@ export default function VideoCallPage() {
 
         console.log(`[v0] Submitting ${role} recording for transcription...`)
         console.log(`[v0] Audio blob size: ${audioBlob.size} bytes`)
-        
+
         const transcribeResponse = await fetch("/api/transcription/video-session-batch", {
           method: "POST",
           body: formData,
@@ -104,10 +105,10 @@ export default function VideoCallPage() {
           const errorText = await transcribeResponse.text()
           console.error(`[v0] Failed to submit ${role} recording:`, transcribeResponse.status, errorText)
         }
-        
+
         audioChunksRef.current = []
       }
-      
+
       mediaRecorderRef.current = null
     } catch (err) {
       console.error(`[v0] Error stopping ${role} recording:`, err)
@@ -115,7 +116,13 @@ export default function VideoCallPage() {
   }
 
   const handleEndCall = async () => {
+    if (isEndingCall) {
+      console.log("[v0] End call already in progress, ignoring...")
+      return
+    }
+
     try {
+      setIsEndingCall(true)
       console.log("[v0] handleEndCall triggered, role:", role)
 
       if (isRecording) {
@@ -156,7 +163,7 @@ export default function VideoCallPage() {
       }
 
       setShowCompletionMessage(true)
-      
+
       if (role === "host") {
         setTimeout(() => router.push("/dashboard"), 1500)
       }
@@ -242,7 +249,7 @@ export default function VideoCallPage() {
           const checkAndInit = setInterval(() => {
             if (window.VideoSDKMeeting) {
               clearInterval(checkAndInit)
-              
+
               try {
                 const config = {
                   name: participantName || (role === "host" ? "Host" : "Participant"),
@@ -344,6 +351,22 @@ export default function VideoCallPage() {
 
   return (
     <main className="h-screen w-full bg-black flex flex-col overflow-hidden">
+      {isEndingCall && !showCompletionMessage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-card border border-border rounded-lg p-6 text-center max-w-sm mx-4">
+            <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              {role === "host" ? "Ending Call..." : "Leaving Interview..."}
+            </h2>
+            <p className="text-muted-foreground">
+              {role === "host"
+                ? "Please wait. You will be redirected to dashboard shortly."
+                : "Please wait. Your session is being saved."}
+            </p>
+          </div>
+        </div>
+      )}
+
       {showCompletionMessage && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="text-center">
@@ -367,7 +390,9 @@ export default function VideoCallPage() {
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Thank You!</h2>
                 <p className="text-gray-300 mb-4">Your interview has been completed successfully</p>
-                <p className="text-sm text-gray-400">We appreciate your time. Our team will review your responses shortly.</p>
+                <p className="text-sm text-gray-400">
+                  We appreciate your time. Our team will review your responses shortly.
+                </p>
                 <button
                   onClick={() => router.push("/")}
                   className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
@@ -408,7 +433,8 @@ export default function VideoCallPage() {
 
             <button
               onClick={handleEndCall}
-              className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors font-medium text-sm whitespace-nowrap flex items-center justify-center gap-2 min-h-10"
+              disabled={isEndingCall}
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors font-medium text-sm whitespace-nowrap flex items-center justify-center gap-2 min-h-10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Phone className="h-4 w-4 flex-shrink-0" />
               <span className="hidden sm:inline">End Call</span>

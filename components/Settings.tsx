@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Eye, EyeOff, User, Shield, Palette, AlertTriangle, Mail, Lock, Trash2, Building, Sun, Moon, Monitor, Microscope } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, User, Shield, Palette, AlertTriangle, Mail, Lock, Trash2, Building, Sun, Moon, Monitor, Microscope, FileText } from 'lucide-react'
 import { createClient } from "@/lib/supabase/client"
 
 // Define the SettingsProps interface
@@ -705,16 +705,50 @@ export default function Settings({ onBack, userEmail, onNotification }: Settings
                 <div className="space-y-4 pt-6 border-t border-border">
                   <Label className="text-foreground text-base font-semibold flex items-center gap-2">
                     <Microscope className="w-5 h-5" />
-                    Testing
+                    Testing & Development
                   </Label>
-                  <p className="text-sm text-muted-foreground">Access testing and development tools</p>
-                  <Button
-                    onClick={() => router.push("/test-assemblyai")}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white transition-all duration-300 hover:scale-105 w-full sm:w-auto"
-                  >
-                    <Microscope className="w-4 h-4 mr-2" />
-                    Go to Test Page
-                  </Button>
+                  <p className="text-sm text-muted-foreground">Access testing tools for various system components</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button
+                      onClick={() => router.push("/test-ai-parser")}
+                      className="bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 hover:scale-105 justify-start"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      AI Resume Parser
+                    </Button>
+                    
+                    <Button
+                      onClick={() => router.push("/test-email")}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white transition-all duration-300 hover:scale-105 justify-start"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Email Service
+                    </Button>
+                    
+                    <Button
+                      onClick={() => router.push("/test-assemblyai")}
+                      className="bg-purple-600 hover:bg-purple-700 text-white transition-all duration-300 hover:scale-105 justify-start"
+                    >
+                      <Microscope className="w-4 h-4 mr-2" />
+                      AssemblyAI
+                    </Button>
+                    
+                    <Button
+                      onClick={() => router.push("/test-audio")}
+                      className="bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300 hover:scale-105 justify-start"
+                    >
+                      <Microscope className="w-4 h-4 mr-2" />
+                      Audio Processing
+                    </Button>
+                  </div>
+                  
+                  <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                    <AlertTriangle className="w-4 h-4" />
+                    <AlertDescription>
+                      Test pages are for development and debugging purposes. Use them to verify system functionality.
+                    </AlertDescription>
+                  </Alert>
                 </div>
               </CardContent>
             </Card>

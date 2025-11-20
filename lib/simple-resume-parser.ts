@@ -10,31 +10,49 @@ export interface ParsedResumeData {
   education_level: string
   resume_summary: string
   certifications: string
+  raw_text?: string
 }
 
 export class SimpleResumeParser {
   async parseFromFile(file: File): Promise<ParsedResumeData> {
     try {
-      console.log("[v0] Starting advanced resume parsing for:", file.name)
-
+      console.log("[v0] Starting resume parsing for:", file.name, "Type:", file.type, "Size:", file.size)
+      
+      // Use only the advanced OCR service which is more reliable
+      
       const extractedData = await advancedOCRService.extractFromFile(file)
 
       const parsedData: ParsedResumeData = {
         applicant_name: extractedData.name || "Unknown Applicant",
         applicant_email: extractedData.email || "",
-        applicant_phone: extractedData.phone || "", // Re-enable phone extraction
+        applicant_phone: extractedData.phone || "",
         applicant_city: extractedData.location || "",
         key_skills: extractedData.skills.join(", ") || "Not specified",
         experience_years: this.parseExperienceYears(extractedData.experience),
         education_level: extractedData.education || "Not specified",
         resume_summary: extractedData.summary || "Resume processed successfully",
         certifications: this.extractCertifications(extractedData.rawText),
+        raw_text: extractedData.rawText
       }
 
-      console.log("[v0] Advanced parsed resume data:", parsedData)
+      console.log("[v0] Resume parsing completed successfully")
+      console.log("[v0] Parsed data:", {
+        name: parsedData.applicant_name,
+        email: parsedData.applicant_email,
+        phone: parsedData.applicant_phone,
+        city: parsedData.applicant_city,
+        skills: parsedData.key_skills.substring(0, 50) + '...',
+      })
+      
       return parsedData
+      
     } catch (error) {
-      console.error("[v0] Advanced resume parsing error:", error)
+      console.error("[v0] Resume parsing error:", error)
+      console.error("[v0] Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
       throw new Error(`Resume parsing failed: ${error.message}`)
     }
   }

@@ -1,4 +1,5 @@
 import { WORLD_CITIES, INTERNATIONAL_NAMES } from "./world-data-reference"
+import { convertPDFToImages, dataURLToBase64 } from './pdf-to-image'
 
 export interface ExtractedResumeData {
   name: string
@@ -214,53 +215,127 @@ export class AdvancedOCRService {
 
   async extractFromFile(file: File): Promise<ExtractedResumeData> {
     try {
-      console.log("[v0] Starting advanced OCR extraction for file:", file.name, "Type:", file.type)
+      console.log("[v0] Starting advanced OCR extraction for file:", file.name, "Type:", file.type, "Size:", file.size)
 
-      if (file.type === "text/plain" || file.name.toLowerCase().endsWith(".txt")) {
+      const fileExtension = file.name.toLowerCase().split('.').pop() || ''
+      
+      if (file.type === "text/plain" || fileExtension === 'txt') {
         return await this.extractFromTextFile(file)
       }
 
       if (
         file.type === "application/msword" ||
         file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        file.name.toLowerCase().endsWith(".doc") ||
-        file.name.toLowerCase().endsWith(".docx")
+        fileExtension === 'doc' ||
+        fileExtension === 'docx'
       ) {
-        return await this.extractFromDocumentFile(file)
+        console.log("[v0] Word document detected - not supported")
+        throw new Error(
+          "Word documents (.doc/.docx) are not supported. Please convert your resume to PDF or save it as an image (PNG/JPG) for best results."
+        )
       }
 
-      let processFile = file
-      const supportedTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"]
-
-      // Only convert on client if needed (this won't execute on server)
-      if (!supportedTypes.includes(file.type) && typeof OffscreenCanvas !== "undefined") {
-        try {
-          processFile = await this.convertToSupportedFormat(file)
-        } catch (error) {
-          console.warn("[v0] Format conversion failed, using original:", error)
-          // Continue with original file
-        }
-      }
-
-      let base64: string
-
-      if (processFile.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-        try {
-          base64 = await this.fileToBase64ServerSide(processFile)
-          return await this.extractFromPDFEnhanced(base64, processFile.name)
-        } catch (pdfError) {
-          console.error("[v0] PDF processing failed:", pdfError)
-          throw new Error(
-            `PDF processing failed: ${pdfError.message}. Please try uploading the PDF file separately, or convert it to an image format (PNG/JPG).`,
-          )
-        }
-      } else {
-        base64 = await this.fileToBase64ServerSide(processFile)
+      const supportedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"]
+      if (supportedImageTypes.includes(file.type) || ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileExtension)) {
+        console.log("[v0] Image file detected, processing with OCR...")
+        const base64 = await this.fileToBase64ServerSide(file)
         return await this.extractFromImageEnhanced(base64)
       }
+
+      if (file.type === "application/pdf" || fileExtension === 'pdf') {
+        try {
+          console.log("[v0] PDF detected - sending to OCR API")
+          console.log("[v0] PDF file size:", (file.size / 1024).toFixed(2), "KB")
+          
+          // Validate PDF size (max 5MB for OCR API)
+          if (file.size > 5 * 1024 * 1024) {
+            throw new Error("PDF file is too large (max 5MB for OCR processing). Please reduce the file size or convert to PNG/JPG.")
+          }
+          
+          const base64 = await this.fileToBase64ServerSide(file)
+          return await this.extractFromPDFDirect(base64, file.name)
+          
+        } catch (pdfError) {
+          console.error("[v0] PDF processing failed:", pdfError)
+          
+          // Provide helpful error messages
+          if (pdfError.message.includes('password')) {
+            throw new Error("PDF is password-protected. Please remove the password and try again.")
+          } else if (pdfError.message.includes('too large')) {
+            throw pdfError
+          } else {
+            throw new Error(
+              `PDF processing failed: ${pdfError.message}. Try converting your PDF to PNG or JPG images instead.`
+            )
+          }
+        }
+      }
+
+      // Unsupported format
+      console.warn("[v0] Unsupported file format:", file.type, fileExtension)
+      throw new Error(
+        `Unsupported file format: ${fileExtension || file.type}. Supported formats: PDF (max 5MB), PNG, JPG, GIF, WEBP, TXT.`
+      )
+      
     } catch (error) {
       console.error("[v0] Advanced OCR extraction error:", error)
-      throw new Error(`Failed to extract resume data: ${error.message}`)
+      throw error
+    }
+  }
+
+  private async extractFromPDFDirect(base64: string, filename?: string): Promise<ExtractedResumeData> {
+    console.log("[v0] Processing PDF directly with OCR API:", filename || "unknown file")
+
+    try {
+      const formData = new FormData()
+      formData.append("base64Image", `data:application/pdf;base64,${base64}`)
+      formData.append("language", "eng")
+      formData.append("isOverlayRequired", "false")
+      formData.append("detectOrientation", "true")
+      formData.append("scale", "true")
+      formData.append("OCREngine", "2")
+      formData.append("filetype", "PDF")
+
+      const response = await fetch(this.API_URL, {
+        method: "POST",
+        headers: {
+          apikey: this.API_KEY,
+        },
+        body: formData,
+      })
+
+      console.log("[v0] PDF OCR response status:", response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("[v0] PDF OCR API error:", response.status, errorText)
+        throw new Error(`OCR API error: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log("[v0] PDF OCR result received")
+
+      if (result.OCRExitCode !== 1) {
+        const errorMsg = result.ErrorMessage?.[0] || result.ErrorMessage || "OCR processing failed"
+        console.error("[v0] OCR failed:", errorMsg)
+        throw new Error(`OCR error: ${errorMsg}`)
+      }
+
+      if (!result.ParsedResults || result.ParsedResults.length === 0) {
+        throw new Error("No text found in PDF. The PDF may be image-based, password-protected, or contain no readable text.")
+      }
+
+      const rawText = result.ParsedResults[0].ParsedText
+      console.log("[v0] PDF text extracted, length:", rawText.length)
+
+      if (!rawText || rawText.trim().length < 10) {
+        throw new Error("Insufficient text extracted from PDF. Try converting to PNG/JPG format.")
+      }
+
+      return this.extractInformationAdvanced(rawText)
+    } catch (error) {
+      console.error("[v0] PDF OCR error:", error)
+      throw error
     }
   }
 
@@ -322,11 +397,10 @@ export class AdvancedOCRService {
     const formData = new FormData()
     formData.append("base64Image", `data:image/jpeg;base64,${base64}`)
     formData.append("language", "eng")
-    formData.append("OCREngine", "2")
+    formData.append("OCREngine", "2")  // Engine 2 for better accuracy
     formData.append("isOverlayRequired", "false")
     formData.append("detectOrientation", "true")
     formData.append("scale", "true")
-    formData.append("isTable", "false")
 
     try {
       const response = await fetch(this.API_URL, {
@@ -340,19 +414,20 @@ export class AdvancedOCRService {
       if (!response.ok) {
         const errorText = await response.text()
         console.error("[v0] Image OCR API error:", response.status, errorText)
-        throw new Error(`Image OCR API error: ${response.status} - ${errorText}`)
+        throw new Error(`OCR API returned error ${response.status}: ${errorText}`)
       }
 
       const result = await response.json()
-      console.log("[v0] Image OCR result:", result)
+      console.log("[v0] Image OCR result:", JSON.stringify(result, null, 2))
 
       if (result.OCRExitCode !== 1) {
-        console.error("[v0] OCR failed with exit code:", result.OCRExitCode, "Error:", result.ErrorMessage)
-        throw new Error(`Image OCR failed: ${result.ErrorMessage || "OCR processing failed"}`)
+        const errorMsg = result.ErrorMessage?.[0] || result.ErrorMessage || "Unknown OCR error"
+        console.error("[v0] OCR failed with exit code:", result.OCRExitCode, "Error:", errorMsg)
+        throw new Error(`OCR processing failed: ${errorMsg}`)
       }
 
       if (!result.ParsedResults?.[0]?.ParsedText) {
-        throw new Error("No text found in image")
+        throw new Error("No text found in image. The image may be unclear or contain no readable text.")
       }
 
       const rawText = result.ParsedResults[0].ParsedText
@@ -365,7 +440,7 @@ export class AdvancedOCRService {
       return this.extractInformationAdvanced(rawText)
     } catch (error) {
       console.error("[v0] Image OCR processing error:", error)
-      throw new Error(`Image OCR error: ${error.message}`)
+      throw error // Re-throw to preserve error message
     }
   }
 
@@ -373,17 +448,15 @@ export class AdvancedOCRService {
     console.log("[v0] Starting enhanced PDF processing for:", filename || "unknown file")
 
     try {
-      console.log("[v0] Attempting PDF OCR with Engine 2")
+      console.log("[v0] Attempting PDF OCR with proper multipart upload")
 
       const formData = new FormData()
       formData.append("base64Image", `data:application/pdf;base64,${base64}`)
       formData.append("language", "eng")
-      formData.append("OCREngine", "2")
-      formData.append("isOverlayRequired", "false")
       formData.append("isOverlayRequired", "false")
       formData.append("detectOrientation", "true")
       formData.append("scale", "true")
-      formData.append("isTable", "true")
+      formData.append("OCREngine", "2")  // Engine 2 is recommended for PDFs
       formData.append("filetype", "PDF")
 
       const response = await fetch(this.API_URL, {
@@ -399,73 +472,33 @@ export class AdvancedOCRService {
       if (!response.ok) {
         const errorText = await response.text()
         console.error("[v0] PDF OCR API error:", response.status, errorText)
-        throw new Error(`PDF OCR API error: ${response.status} - ${errorText}`)
+        throw new Error(`OCR API returned error ${response.status}: ${errorText}`)
       }
 
       const result = await response.json()
-      console.log("[v0] PDF OCR result success:", result.OCRExitCode === 1)
+      console.log("[v0] PDF OCR result:", JSON.stringify(result, null, 2))
 
-      if (result.OCRExitCode === 1 && result.ParsedResults?.[0]?.ParsedText) {
-        const rawText = result.ParsedResults[0].ParsedText
-        console.log("[v0] PDF text extracted successfully, length:", rawText.length)
-
-        if (rawText.trim().length < 10) {
-          console.log("[v0] PDF text too short, trying fallback")
-          throw new Error("PDF text extraction insufficient")
-        }
-
-        return this.extractInformationAdvanced(rawText)
+      if (result.OCRExitCode !== 1) {
+        const errorMsg = result.ErrorMessage?.[0] || result.ErrorMessage || "Unknown OCR error"
+        console.error("[v0] OCR failed with exit code:", result.OCRExitCode, "Error:", errorMsg)
+        throw new Error(`OCR processing failed: ${errorMsg}`)
       }
 
-      console.log("[v0] OCR Engine 2 failed, error:", result.ErrorMessage)
-      throw new Error(`OCR Engine 2 failed: ${result.ErrorMessage || "Unknown error"}`)
+      if (!result.ParsedResults || result.ParsedResults.length === 0) {
+        throw new Error("No text found in PDF. The PDF may be image-based or contain no readable text.")
+      }
+
+      const rawText = result.ParsedResults[0].ParsedText
+      console.log("[v0] PDF text extracted successfully, length:", rawText.length)
+
+      if (!rawText || rawText.trim().length < 10) {
+        throw new Error("PDF text extraction insufficient - file may be image-based or corrupted. Try converting to PNG/JPG format.")
+      }
+
+      return this.extractInformationAdvanced(rawText)
     } catch (error) {
-      console.log("[v0] Engine 2 failed, trying Engine 1 fallback:", error.message)
-
-      try {
-        const formData = new FormData()
-        formData.append("base64Image", `data:application/pdf;base64,${base64}`)
-        formData.append("language", "eng")
-        formData.append("OCREngine", "1")
-        formData.append("isOverlayRequired", "false")
-        formData.append("detectOrientation", "true")
-        formData.append("filetype", "PDF")
-
-        const response = await fetch(this.API_URL, {
-          method: "POST",
-          headers: {
-            apikey: this.API_KEY,
-          },
-          body: formData,
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error("[v0] PDF fallback API error:", response.status, errorText)
-          throw new Error(`PDF OCR fallback API error: ${response.status} - ${errorText}`)
-        }
-
-        const result = await response.json()
-        console.log("[v0] PDF fallback OCR result success:", result.OCRExitCode === 1)
-
-        if (result.OCRExitCode !== 1 || !result.ParsedResults?.[0]?.ParsedText) {
-          throw new Error(`PDF OCR failed: ${result.ErrorMessage || "No text extracted"}`)
-        }
-
-        const rawText = result.ParsedResults[0].ParsedText
-        console.log("[v0] PDF fallback text extracted, length:", rawText.length)
-
-        if (rawText.trim().length < 10) {
-          throw new Error("PDF text extraction insufficient - file may be image-based or corrupted")
-        }
-
-        return this.extractInformationAdvanced(rawText)
-      } catch (fallbackError) {
-        console.error("[v0] All PDF OCR methods failed:", fallbackError)
-        throw new Error(
-          `PDF processing failed: ${fallbackError.message}. The PDF may be image-based, corrupted, or contain no readable text. Please try converting to PNG/JPG format.`,
-        )
-      }
+      console.error("[v0] PDF OCR processing error:", error)
+      throw error // Re-throw to preserve error message
     }
   }
 
@@ -490,6 +523,12 @@ export class AdvancedOCRService {
             break
           case "png":
             mimeType = "image/png"
+            break
+          case "doc":
+            mimeType = "application/msword"
+            break
+          case "docx":
+            mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             break
           default:
             mimeType = file.type || "application/octet-stream"
@@ -726,7 +765,7 @@ export class AdvancedOCRService {
     const nonNamePatterns = [
       /^(resume|cv|curriculum vitae|profile|summary|objective|experience|education|skills|contact|phone|email|address|references|certifications?|projects?|achievements?|awards?|languages?|interests?|hobbies?)$/i,
       /^(kitchen helper|chef|cook|manager|assistant|supervisor|director|coordinator|specialist|analyst|developer|engineer|designer|consultant|administrator|executive|officer|representative|associate|intern|trainee|server|waiter|waitress|bartender|host|hostess|cashier|sales|marketing|hr|human resources|accounting|finance|it|information technology|customer service|operations|logistics|maintenance|security|receptionist|secretary|administrative|clerical|data entry|quality assurance|qa|project manager|team lead|senior|junior|lead|principal|vice president|vp|ceo|cfo|cto|coo|president|founder|owner|partner|contractor|freelancer|consultant|advisor|board member|volunteer|student|graduate|undergraduate|intern|trainee|apprentice|entry level|experienced|professional|expert|specialist|generalist|multi-skilled|cross-functional|bilingual|multilingual|certified|licensed|registered|accredited|qualified|skilled|experienced|seasoned|veteran|senior level|mid level|entry level|junior level|associate level|manager level|director level|executive level|c-level|upper management|middle management|lower management|non-management|individual contributor|team player|self-starter|motivated|driven|results-oriented|goal-oriented|detail-oriented|customer-focused|client-focused|service-oriented|quality-focused|safety-conscious|cost-effective|efficient|productive|innovative|creative|analytical|strategic|tactical|operational|technical|non-technical|hands-on|leadership|management|supervisory|mentoring|coaching|training|teaching|presenting|public speaking|communication|interpersonal|organizational|time management|multitasking|prioritization|problem-solving|troubleshooting|decision-making|critical thinking|analytical thinking|strategic thinking|creative thinking|outside-the-box thinking|innovative thinking|collaborative|team-oriented|independent|self-motivated|proactive|reactive|flexible|adaptable|versatile|reliable|dependable|trustworthy|honest|ethical|professional|courteous|friendly|outgoing|personable|approachable|patient|calm|composed|confident|assertive|diplomatic|tactful|discreet|confidential|loyal|committed|dedicated|passionate|enthusiastic|energetic|dynamic|ambitious|career-focused|growth-oriented|learning-oriented|continuous improvement|best practices|industry standards|regulatory compliance|policy adherence|procedure following|protocol compliance|safety standards|quality standards|performance standards|productivity standards|efficiency standards|customer satisfaction|client satisfaction|stakeholder satisfaction|employee satisfaction|team satisfaction|organizational satisfaction|company satisfaction|business satisfaction|operational excellence|service excellence|quality excellence|performance excellence|leadership excellence|management excellence|technical excellence|professional excellence|personal excellence|continuous excellence|sustainable excellence|measurable excellence|demonstrable excellence|proven excellence|recognized excellence|awarded excellence|certified excellence|accredited excellence|licensed excellence|registered excellence|qualified excellence|experienced excellence|seasoned excellence|veteran excellence|expert excellence|specialist excellence|generalist excellence|multi-skilled excellence|cross-functional excellence|bilingual excellence|multilingual excellence)$/i,
-      /^(new york|los angeles|chicago|houston|phoenix|philadelphia|san antonio|san diego|dallas|san jose|austin|jacksonville|fort worth|columbus|charlotte|san francisco|indianapolis|seattle|denver|washington|boston|el paso|detroit|nashville|portland|oklahoma city|las vegas|baltimore|louisville|milwaukee|albuquerque|tucson|fresno|sacramento|mesa|kansas city|atlanta|long beach|colorado springs|raleigh|miami|virginia beach|omaha|oakland|minneapolis|tulsa|cleveland|wichita|arlington|new orleans|bakersfield|tampa|honolulu|aurora|anaheim|santa ana|st. louis|riverside|corpus christi|lexington|pittsburgh|anchorage|stockton|cincinnati|saint paul|toledo|newark|greensboro|plano|henderson|lincoln|buffalo|jersey city|chula vista|fort wayne|orlando|st. petersburg|chandler|laredo|norfolk|durham|madison|lubbock|irvine|winston-salem|glendale|garland|hialeah|chesapeake|gilbert|baton rouge|irving|scottsdale|north las vegas|fremont|boise|richmond|san bernardino|birmingham|spokane|rochester|des moines|modesto|fayetteville|tacoma|oxnard|fontana|columbus|montgomery|moreno valley|shreveport|aurora|yonkers|akron|huntington beach|little rock|augusta|amarillo|glendale|mobile|grand rapids|salt lake city|tallahassee|huntsville|grand prairie|knoxville|worcester|newport news|brownsville|overland park|santa clarita|providence|garden grove|chattanooga|oceanside|jackson|fort lauderdale|santa rosa|rancho cucamonga|port st. lucie|tempe|ontario|vancouver|cape coral|sioux falls|springfield|peoria|pembroke pines|elk grove|salem|lancaster|corona|eugene|palmdale|salinas|springfield|pasadena|fort collins|hayward|pomona|cary|rockford|alexandria|escondido|mckinney|kansas city|joliet|sunnyvale|torrance|bridgeport|lakewood|hollywood|paterson|naperville|syracuse|mesquite|dayton|savannah|clarksville|orange|pasadena|fullerton|killeen|frisco|hampton|mcallen|warren|west valley city|columbia|olathe|sterling heights|new haven|miramar|waco|thousand oaks|cedar rapids|charleston|sioux city|round rock|fargo|carrollton|roseville|concord|thornton|visalia|beaumont|gainesville|simi valley|denton|green bay|lowell|pueblo|wichita falls|murfreesboro|lafayette|norwalk|bellingham|westminster|ventura|ann arbor|high point|hemet|west jordan|lakeland|nashua|midland|daly city|boulder|west palm beach|mckinney|clearwater|cambridge|billings|west covina|richmond|pearland|richardson|murrieta|antioch|temecula|inglewood|miami gardens|bloomington|santa maria|victorville|rialto|carson|santa monica|colton|college station|clovis|sandy springs|league city|tyler|sandy|sunrise|edinburg|el monte|carmel|tuscaloosa|roswell|clinton|vacaville|davie|laguna niguel|milpitas|upland|westland|cumming|norwalk|carlsbad|plantation|hammond|alpharetta|pompano beach|springfield|boynton beach|missouri city|vallejo|new bedford|quincy|brockton|roanoke|santa clara|lynn|lakewood|gary|lawrence|fort smith|evansville|independence|provo|athens|peoria|huntsville|reading|davenport|arvada|miami beach|troy|westminster|bloomington|dearborn|racine|yuma|burbank|fishers|ann arbor|richardson|pueblo west|broken arrow|sandy|renton|jurupa valley|compton|san mateo|las cruces|south bend)$/i,
+      /^(new york|los angeles|chicago|houston|phoenix|philadelphia|san antonio|san diego|dallas|san jose|austin|jacksonville|fort worth|columbus|charlotte|san francisco|indianapolis|seattle|denver|washington|boston|el paso|detroit|nashville|portland|oklahoma city|las vegas|baltimore|louisville|milwaukee|albuquerque|tucson|fresno|sacramento|mesa|kansas city|atlanta|long beach|colorado springs|raleigh|miami|virginia beach|omaha|oakland|minneapolis|tulsa|cleveland|wichita|arlington|new orleans|bakersfield|tampa|honolulu|aurora|anaheim|santa ana|st. louis|riverside|corpus christi|lexington|pittsburgh|anchorage|stockton|cincinnati|saint paul|toledo|newark|greensboro|plano|henderson|lincoln|buffalo|jersey city|chula vista|fort wayne|orlando|st. petersburg|chandler|laredo|norfolk|durham|madison|lubbock|irvine|winston-salem|glendale|garland|hialeah|chesapeake|gilbert|baton rouge|irving|scottsdale|north las vegas|fremont|boise|richmond|san bernardino|birmingham|spokane|rochester|des moines|modesto|fayetteville|tacoma|oxnard|fontana|columbus|montgomery|moreno valley|shreveport|aurora|yonkers|akron|huntington beach|little rock|augusta|amarillo|glendale|mobile|grand rapids|salt lake city|tallahassee|huntsville|grand prairie|knoxville|worcester|newport news|brownsville|overland park|santa clarita|providence|garden grove|chattanooga|oceanside|jackson|fort lauderdale|santa rosa|rancho cucamonga|port st. lucie|tempe|ontario|vancouver|cape coral|sioux falls|springfield|peoria|pembroke pines|elk grove|salem|lancaster|corona|eugene|palmdale|salinas|springfield|pasadena|fort collins|hayward|pomona|cary|rockford|alexandria|escondido|mckinney|kansas city|joliet|sunnyvale|torrance|bridgeport|lakewood|hollywood|paterson|naperville|syracuse|mesquite|dayton|savannah|clarksville|orange|pasadena|fullerton|killeen|frisco|hampton|mcallen|warren|west valley city|columbia|olathe|sterling heights|new haven|miramar|waco|thousand oaks|cedar rapids|charleston|sioux city|round rock|fargo|carrollton|roseville|concord|thornton|visalia|beaumont|gainesville|simi valley|denton|green bay|lowell|pueblo|wichita falls|murfreesboro|lafayette|norwalk|bellingham|westminster|ventura|ann arbor|high point|hemet|west jordan|lakeland|nashua|midland|daly city|boulder|west palm beach|mckinney|clearwater|cambridge|billings|west covina|richmond|pearland|richardson|murrieta|antioch|temecula|inglewood|miami gardens|bloomington|santa maria|victorville|rialto|carson|santa monica|colton|college station|clovis|sandy springs|league city|tyler|sandy|sunrise|edinburg|el monte|carmel|tuscaloosa|roswell|clinton|vacaville|davie|laguna niguel|milpitas|upland|westland|cumming|norwalk|carlsbad|plantation|hammond|alpharetta|california|texas|florida|new york|pennsylvania|illinois|ohio|georgia|north carolina|michigan|new jersey|virginia|washington|arizona|massachusetts|tennessee|indiana|missouri|maryland|wisconsin|colorado|minnesota|south carolina|alabama|louisiana|kentucky|oregon|oklahoma|connecticut|utah|iowa|nevada|arkansas|mississippi|kansas|new mexico|nebraska|west virginia|idaho|hawaii|new hampshire|maine|montana|rhode island|delaware|south dakota|north dakota|alaska|vermont|wyoming|ca|tx|fl|ny|pa|il|oh|ga|nc|mi|nj|va|wa|az|ma|tn|in|mo|md|wi|co|mn|sc|al|la|ky|or|ok|ct|ut|ia|nv|ar|ms|ks|nm|ne|wv|id|hi|nh|me|mt|ri|de|sd|nd|ak|vt|wy|united states|usa|america|canada|mexico|uk|united kingdom|england|scotland|wales|ireland|france|germany|italy|spain|portugal|netherlands|belgium|switzerland|austria|sweden|norway|denmark|finland|poland|czech republic|hungary|romania|bulgaria|greece|turkey|russia|ukraine|belarus|lithuania|latvia|estonia|croatia|serbia|bosnia|montenegro|macedonia|albania|slovenia|slovakia|moldova|georgia|armenia|azerbaijan|kazakhstan|uzbekistan|turkmenistan|kyrgyzstan|tajikistan|afghanistan|pakistan|india|bangladesh|sri lanka|nepal|bhutan|maldives|myanmar|thailand|laos|cambodia|vietnam|malaysia|singapore|brunei|indonesia|philippines|china|japan|south korea|north korea|mongolia|taiwan|hong kong|macau|australia|new zealand|fiji|papua new guinea|solomon islands|vanuatu|new caledonia|samoa|tonga|kiribati|tuvalu|nauru|palau|marshall islands|micronesia|guam|northern mariana islands|cook islands|niue|tokelau|wallis and futuna|french polynesia|pitcairn islands|easter island|antarctica)$/i,
       /^d+/g, // Lines starting with numbers
       /^[^a-zA-Z]/, // Lines not starting with letters
       /^.{1,2}$/, // Very short lines
@@ -1281,7 +1320,7 @@ export class AdvancedOCRService {
     }
 
     // Count job positions with dates
-    const jobCount = (text.match(/\b(20\d{2})\s*[-–]\s*(20\d{2}|present|current)/gi) || []).length
+    const jobCount = (text.match(/\b(20\d{2})\s*[-–]\s*(20\d{2}|current|present)/gi) || []).length
     if (jobCount > 0) {
       const estimatedYears = Math.max(1, jobCount * 2)
       return `${estimatedYears} years (estimated)`
@@ -1350,6 +1389,11 @@ export class AdvancedOCRService {
     try {
       console.log("[v0] Processing plain text file:", file.name)
       const text = await file.text()
+      
+      if (text.trim().length < 10) {
+        throw new Error("Text file appears to be empty or too short")
+      }
+      
       return this.extractInformationAdvanced(text)
     } catch (error) {
       console.error("[v0] Text file extraction error:", error)
@@ -1357,49 +1401,7 @@ export class AdvancedOCRService {
     }
   }
 
-  private async extractFromDocumentFile(file: File): Promise<ExtractedResumeData> {
-    try {
-      console.log("[v0] Processing document file:", file.name)
-
-      // Read file as array buffer and extract readable text
-      const arrayBuffer = await file.arrayBuffer()
-      const uint8Array = new Uint8Array(arrayBuffer)
-
-      // Convert to string and extract readable characters
-      let extractedText = ""
-      for (let i = 0; i < uint8Array.length; i++) {
-        const char = uint8Array[i]
-        // Include printable ASCII characters and common extended characters
-        if ((char >= 32 && char <= 126) || char === 10 || char === 13 || (char >= 160 && char <= 255)) {
-          extractedText += String.fromCharCode(char)
-        } else if (char === 0) {
-          // Skip null bytes but add space for word separation
-          if (extractedText[extractedText.length - 1] !== " ") {
-            extractedText += " "
-          }
-        }
-      }
-
-      // Clean up the extracted text
-      extractedText = extractedText
-        .replace(/\s+/g, " ") // Replace multiple spaces with single space
-        .replace(/[^\x20-\x7E\n\r]/g, " ") // Replace non-printable chars with space
-        .trim()
-
-      console.log("[v0] Extracted text length from document:", extractedText.length)
-      console.log("[v0] First 200 chars:", extractedText.substring(0, 200))
-
-      if (extractedText.length < 50) {
-        throw new Error("Document appears to be empty or unreadable. Please try uploading as PDF or image format.")
-      }
-
-      return this.extractInformationAdvanced(extractedText)
-    } catch (error) {
-      console.error("[v0] Document file extraction error:", error)
-      throw new Error(`Failed to extract document data: ${error.message}. Please try uploading as PDF or image format.`)
-    }
-  }
-
+  
   private extractEmail(text: string): string {
     const emailPattern = /([a-zA-Z0-9._%+-]+)@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
     const matches = text.match(emailPattern)
