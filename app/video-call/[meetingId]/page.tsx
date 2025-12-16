@@ -1,7 +1,7 @@
 "use client"
-import { useParams, useSearchParams, useRouter } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Phone, Copy, AlertCircle, CheckCircle } from 'lucide-react'
+import { Loader2, Phone, Copy, AlertCircle, CheckCircle } from "lucide-react"
 import { LiveTranscription } from "@/components/LiveTranscription"
 
 declare global {
@@ -36,20 +36,20 @@ export default function VideoCallPage() {
   const startRecording = async () => {
     try {
       console.log(`[v0] Starting audio recording for ${role}...`)
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-        } 
+        },
       })
-      
+
       const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4"
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
         audioBitsPerSecond: 128000,
       })
-      
+
       mediaRecorder.addEventListener("dataavailable", (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data)
@@ -75,14 +75,14 @@ export default function VideoCallPage() {
       console.log(`[v0] Stopping ${role} recording...`)
       setIsRecording(false)
       mediaRecorderRef.current.stop()
-      
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       if (audioChunksRef.current.length > 0) {
         const mimeType = mediaRecorderRef.current.mimeType
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
         const extension = mimeType.includes("webm") ? "webm" : "mp4"
-        
+
         const formData = new FormData()
         formData.append("audio", audioBlob, `recording-${meetingId}-${role}.${extension}`)
         formData.append("sessionId", meetingId)
@@ -91,7 +91,7 @@ export default function VideoCallPage() {
 
         console.log(`[v0] Submitting ${role} recording for transcription...`)
         console.log(`[v0] Audio blob size: ${audioBlob.size} bytes`)
-        
+
         const transcribeResponse = await fetch("/api/transcription/video-session-batch", {
           method: "POST",
           body: formData,
@@ -104,10 +104,10 @@ export default function VideoCallPage() {
           const errorText = await transcribeResponse.text()
           console.error(`[v0] Failed to submit ${role} recording:`, transcribeResponse.status, errorText)
         }
-        
+
         audioChunksRef.current = []
       }
-      
+
       mediaRecorderRef.current = null
     } catch (err) {
       console.error(`[v0] Error stopping ${role} recording:`, err)
@@ -118,9 +118,11 @@ export default function VideoCallPage() {
     try {
       console.log("[v0] handleEndCall triggered, role:", role)
 
+      setShowCompletionMessage(true)
+
       if (isRecording) {
-        console.log("[v0] Stopping recording before ending call...")
-        await stopRecording()
+        console.log("[v0] Stopping recording in background...")
+        stopRecording().catch((err) => console.error("[v0] Error stopping recording:", err))
       }
 
       if (meetingRef.current && typeof meetingRef.current.end === "function") {
@@ -140,7 +142,7 @@ export default function VideoCallPage() {
       const durationSeconds = Math.floor((Date.now() - startTime) / 1000)
 
       if (role === "host") {
-        const updateResponse = await fetch(`/api/video-sessions/${meetingId}`, {
+        fetch(`/api/video-sessions/${meetingId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -148,16 +150,8 @@ export default function VideoCallPage() {
             ended_at: new Date().toISOString(),
             duration_seconds: durationSeconds,
           }),
-        })
+        }).catch((err) => console.error("[v0] Failed to update session:", err))
 
-        if (!updateResponse.ok) {
-          console.error("[v0] Failed to update session")
-        }
-      }
-
-      setShowCompletionMessage(true)
-      
-      if (role === "host") {
         setTimeout(() => router.push("/dashboard"), 1500)
       }
     } catch (err) {
@@ -242,7 +236,7 @@ export default function VideoCallPage() {
           const checkAndInit = setInterval(() => {
             if (window.VideoSDKMeeting) {
               clearInterval(checkAndInit)
-              
+
               try {
                 const config = {
                   name: participantName || (role === "host" ? "Host" : "Participant"),
@@ -367,7 +361,9 @@ export default function VideoCallPage() {
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Thank You!</h2>
                 <p className="text-gray-300 mb-4">Your interview has been completed successfully</p>
-                <p className="text-sm text-gray-400">We appreciate your time. Our team will review your responses shortly.</p>
+                <p className="text-sm text-gray-400">
+                  We appreciate your time. Our team will review your responses shortly.
+                </p>
                 <button
                   onClick={() => router.push("/")}
                   className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"

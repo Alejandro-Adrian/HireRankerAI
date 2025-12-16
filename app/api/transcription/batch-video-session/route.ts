@@ -1,22 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import { generateText } from "ai"
-import { xai } from "@ai-sdk/xai"
 
 /**
  * REST API Batch Transcription for Video Sessions
- * 
+ *
  * This route handles batch transcription of complete audio recordings
- * using the AssemblyAI REST API (batch processing) followed by AI summarization.
- * 
+ * using the AssemblyAI REST API (batch processing).
+ *
  * Process:
  * 1. Receive complete audio file (sent after recording stops)
  * 2. Upload to AssemblyAI
  * 3. Poll for transcription completion
- * 4. Generate AI summary using Grok/XAI
- * 5. Store results in database
- * 
+ * 4. Store results in database
+ *
  * Advantages over streaming:
  * - No need to keep connection open during processing
  * - Better for large files (post-call processing)
@@ -30,13 +27,13 @@ const ASSEMBLY_API_URL = "https://api.assemblyai.com/v2"
 async function transcribeWithAssemblyAI(audioUrl: string, sessionId: string): Promise<string> {
   try {
     console.log("[v0] Starting REST API batch transcription for session:", sessionId)
-    
+
     // Step 1: Request transcription with REST API
     console.log("[v0] Submitting transcription request to AssemblyAI...")
     const transcriptResponse = await fetch(`${ASSEMBLY_API_URL}/transcript`, {
       method: "POST",
       headers: {
-        "Authorization": ASSEMBLY_API_KEY,
+        Authorization: ASSEMBLY_API_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -63,11 +60,11 @@ async function transcribeWithAssemblyAI(audioUrl: string, sessionId: string): Pr
     let finalTranscript = ""
 
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
       const statusResponse = await fetch(`${ASSEMBLY_API_URL}/transcript/${transcriptId}`, {
         headers: {
-          "Authorization": ASSEMBLY_API_KEY,
+          Authorization: ASSEMBLY_API_KEY,
         },
       })
 
@@ -103,36 +100,9 @@ async function transcribeWithAssemblyAI(audioUrl: string, sessionId: string): Pr
   }
 }
 
-async function generateSummaryWithGrok(transcript: string): Promise<string> {
-  try {
-    console.log("[v0] Generating AI summary with Grok...")
-
-    const { text: summary } = await generateText({
-      model: xai("grok-4", {
-        apiKey: process.env.XAI_API_KEY,
-      }),
-      system: `You are an HR assistant summarizing video interview transcripts. 
-Provide a concise 2-3 paragraph summary focusing on:
-- Key qualifications discussed
-- Technical skills mentioned
-- Candidate strengths and areas of expertise
-- Overall assessment and recommendations`,
-      prompt: transcript,
-      maxTokens: 300,
-      temperature: 0.7,
-    })
-
-    console.log("[v0] ✅ Summary generated successfully")
-    return summary
-  } catch (error) {
-    console.error("[v0] Grok summarization error:", error)
-    throw error
-  }
-}
-
 /**
  * POST /api/transcription/batch-video-session
- * 
+ *
  * Request body:
  * {
  *   "sessionId": "session-uuid",
@@ -145,17 +115,11 @@ export async function POST(request: NextRequest) {
     const { sessionId, meetingId, audioUrl } = await request.json()
 
     if (!audioUrl) {
-      return NextResponse.json(
-        { error: "Missing audioUrl" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Missing audioUrl" }, { status: 400 })
     }
 
     if (!sessionId && !meetingId) {
-      return NextResponse.json(
-        { error: "Missing sessionId or meetingId" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Missing sessionId or meetingId" }, { status: 400 })
     }
 
     console.log("[v0] 🎬 Starting batch video session transcription")
@@ -165,8 +129,7 @@ export async function POST(request: NextRequest) {
     // Transcribe with AssemblyAI REST API (batch)
     const transcript = await transcribeWithAssemblyAI(audioUrl, sessionId || meetingId)
 
-    // Generate summary with Grok
-    const summary = await generateSummaryWithGrok(transcript)
+    console.log("[v0] Transcription complete. Summary generation is now manual - click 'Generate' button in UI.")
 
     // Update database
     const cookieStore = await cookies()
@@ -184,12 +147,11 @@ export async function POST(request: NextRequest) {
             })
           },
         },
-      }
+      },
     )
 
     const updateData: any = {
       transcript: transcript || "",
-      summary: summary || "",
       status: "completed",
       updated_at: new Date().toISOString(),
     }
@@ -206,19 +168,15 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       console.error("[v0] Error updating session:", updateError)
-      return NextResponse.json(
-        { error: "Failed to store transcription results" },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "Failed to store transcription results" }, { status: 500 })
     }
 
-    console.log("[v0] ✅ Session updated with transcript and summary")
+    console.log("[v0] ✅ Session updated with transcript")
 
     return NextResponse.json({
       success: true,
-      message: "Batch transcription completed successfully",
+      message: "Batch transcription completed successfully. Use 'Generate' button to create summary.",
       transcriptLength: transcript.length,
-      summaryLength: summary.length,
     })
   } catch (error) {
     console.error("[v0] Batch transcription error:", error)
@@ -226,7 +184,7 @@ export async function POST(request: NextRequest) {
       {
         error: `Batch transcription failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

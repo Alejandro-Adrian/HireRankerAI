@@ -1,44 +1,41 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { put } from "@vercel/blob"
-import { DEEPGRAM_API_KEY } from '@/lib/constants'
+import { DEEPGRAM_API_KEY } from "@/lib/constants"
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const audioBlob = formData.get("audio") as Blob
     const sessionId = formData.get("sessionId") as string
-    const participantRole = formData.get("participantRole") as string || 'host'
-    const participantName = formData.get("participantName") as string || 'Unknown'
+    const participantRole = (formData.get("participantRole") as string) || "host"
+    const participantName = (formData.get("participantName") as string) || "Unknown"
 
     console.log("[v0] Video session batch transcription started")
     console.log("[v0] SessionId:", sessionId, "AudioBlob size:", audioBlob?.size, "Role:", participantRole)
 
     if (!audioBlob || !sessionId) {
-      return NextResponse.json(
-        { error: "Missing audio blob or sessionId" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Missing audio blob or sessionId" }, { status: 400 })
     }
 
     console.log("[v0] Uploading audio to Vercel Blob...")
     const filename = `video-recordings/${sessionId}/${participantRole}-${Date.now()}.webm`
     const blob = await put(filename, audioBlob, {
-      access: 'public',
+      access: "public",
       addRandomSuffix: false,
     })
-    
+
     console.log("[v0] Audio uploaded to:", blob.url)
 
     const arrayBuffer = await audioBlob.arrayBuffer()
-    
+
     console.log("[v0] Sending to Deepgram API...")
-    const response = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&diarize=true', {
-      method: 'POST',
+    const response = await fetch("https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&diarize=true", {
+      method: "POST",
       headers: {
         Authorization: `Token ${DEEPGRAM_API_KEY}`,
-        'Content-Type': 'audio/webm',
+        "Content-Type": "audio/webm",
       },
       body: arrayBuffer,
     })
@@ -54,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     let transcript = ""
     const transcripts: string[] = []
-    
+
     if (data.results?.channels?.[0]?.alternatives?.[0]?.paragraphs?.paragraphs) {
       data.results.channels[0].alternatives[0].paragraphs.paragraphs.forEach((para: any) => {
         if (para.sentences) {
@@ -69,7 +66,7 @@ export async function POST(request: NextRequest) {
       transcripts.push(data.results.channels[0].alternatives[0].transcript)
     }
 
-    transcript = transcripts.join(' ')
+    transcript = transcripts.join(" ")
 
     if (!transcript) {
       transcript = "No speech detected in the recording."
@@ -93,7 +90,7 @@ export async function POST(request: NextRequest) {
             })
           },
         },
-      }
+      },
     )
 
     // Get session_id from meeting_id
@@ -108,49 +105,27 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("[v0] Inserting recording into database...")
-    const { error: insertError } = await supabase
-      .from("video_session_recordings")
-      .insert({
-        session_id: sessionData.id,
-        participant_role: participantRole,
-        participant_name: participantName,
-        audio_url: blob.url,
-        transcript: transcript,
-        status: 'completed',
-        duration_seconds: Math.floor(audioBlob.size / 16000),
-      })
+    const { error: insertError } = await supabase.from("video_session_recordings").insert({
+      session_id: sessionData.id,
+      participant_role: participantRole,
+      participant_name: participantName,
+      audio_url: blob.url,
+      transcript: transcript,
+      status: "completed",
+      duration_seconds: Math.floor(audioBlob.size / 16000),
+    })
 
     if (insertError) {
       console.error("[v0] Database insert error:", insertError)
       throw new Error(`Database insert failed: ${insertError.message}`)
     }
 
-    console.log('[v0] Triggering progressive summary generation...')
-    const baseUrl = request.nextUrl.origin
-    const summaryUrl = `${baseUrl}/api/video-sessions/${sessionData.id}/generate-summary`
-    console.log('[v0] Summary URL:', summaryUrl)
-    
-    // Trigger summary generation in background
-    fetch(summaryUrl, { 
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(async (res) => {
-        const responseText = await res.text()
-        if (!res.ok) {
-          console.error('[v0] Summary generation failed:', res.status, responseText)
-        } else {
-          console.log('[v0] Summary generation completed:', responseText)
-        }
-      })
-      .catch(err => console.error('[v0] Error triggering summary:', err))
+    console.log('[v0] Transcription complete. Summary generation is now manual - click "Generate" button in UI.')
 
     const { error: updateError } = await supabase
       .from("video_sessions")
       .update({
-        status: 'completed',
+        status: "completed",
         updated_at: new Date().toISOString(),
       })
       .eq("meeting_id", sessionId)
@@ -174,7 +149,7 @@ export async function POST(request: NextRequest) {
         error: "Transcription failed",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

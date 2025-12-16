@@ -20,20 +20,20 @@ HireRankerAI is a comprehensive hiring management system that uses AI to rank an
 
 ### Installation
 1. Clone the repository:
-   \`\`\`bash
+   ```bash
    git clone <repository-url>
    cd hireranker-ai
-   \`\`\`
+   ```
 
 2. Install dependencies:
-   \`\`\`bash
+   ```bash
    npm install
-   \`\`\`
+   ```
 
 3. Set up environment variables:
-   \`\`\`bash
+   ```bash
    cp .env.example .env
-   \`\`\`
+   ```
 
 4. Configure your environment variables in `.env`:
    - Get your Supabase URL and keys from your Supabase project dashboard
@@ -44,9 +44,9 @@ HireRankerAI is a comprehensive hiring management system that uses AI to rank an
    - This creates all necessary tables and functions
 
 6. Start the development server:
-   \`\`\`bash
+   ```bash
    npm run dev
-   \`\`\`
+   ```
 
 ## Required Environment Variables
 

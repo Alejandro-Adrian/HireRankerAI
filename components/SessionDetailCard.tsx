@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
-import { FileText, Clock, Users, Sparkles } from 'lucide-react'
-import SessionSummaryModal from './SessionSummaryModal'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from "react"
+import { Card } from "@/components/ui/card"
+import { FileText, Clock, Users, Sparkles } from "lucide-react"
+import SessionSummaryModal from "./SessionSummaryModal"
+import { Button } from "@/components/ui/button"
 
 interface ParticipantRecording {
   id: string
@@ -49,30 +49,38 @@ export default function SessionDetailCard({ session, onRefresh }: SessionDetailC
 
   const handleGenerateSummary = async () => {
     setIsGeneratingSummary(true)
-    console.log('[v0] Manually triggering summary generation for session:', session.id)
-    
+    console.log("[v0] Manually triggering summary generation for session:", session.id)
+
     try {
       const response = await fetch(`/api/video-sessions/${session.id}/generate-summary`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
-        console.log('[v0] Summary generated successfully:', data)
+        console.log("[v0] Summary generated successfully:", data)
         if (onRefresh) {
           onRefresh()
         }
       } else {
-        console.error('[v0] Summary generation failed:', data)
-        alert(`Failed to generate summary: ${data.error}`)
+        console.error("[v0] Summary generation failed:", data)
+        if (response.status === 429) {
+          alert(
+            `The AI service is currently experiencing high demand. Please wait ${data.retryAfter || 60} seconds and try again.`,
+          )
+        } else if (response.status === 409) {
+          alert("Summary generation is already in progress. Please wait.")
+        } else {
+          alert(`Failed to generate summary: ${data.error}`)
+        }
       }
     } catch (error) {
-      console.error('[v0] Error generating summary:', error)
-      alert('Error generating summary. Check console for details.')
+      console.error("[v0] Error generating summary:", error)
+      alert("Error generating summary. Check console for details.")
     } finally {
       setIsGeneratingSummary(false)
     }
@@ -83,9 +91,9 @@ export default function SessionDetailCard({ session, onRefresh }: SessionDetailC
   }, [session.id])
 
   const combinedTranscript = participantRecordings
-    .filter(r => r.transcript)
-    .map(r => r.transcript)
-    .join(' ')
+    .filter((r) => r.transcript)
+    .map((r) => r.transcript)
+    .join(" ")
 
   const hasTranscription = combinedTranscript.trim().length > 0
   const hasSummary = !!(session.summary && session.summary.trim().length > 0)
@@ -99,19 +107,17 @@ export default function SessionDetailCard({ session, onRefresh }: SessionDetailC
             <h3 className="text-lg font-semibold text-foreground">{session.title}</h3>
             <span
               className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ml-2 flex-shrink-0 ${
-                session.status === 'completed'
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200'
-                  : session.status === 'active'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'
-                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200'
+                session.status === "completed"
+                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200"
+                  : session.status === "active"
+                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200"
+                    : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
               }`}
             >
               {session.status}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {new Date(session.created_at).toLocaleString()}
-          </p>
+          <p className="text-sm text-muted-foreground">{new Date(session.created_at).toLocaleString()}</p>
         </div>
 
         {/* Metadata */}
@@ -119,7 +125,9 @@ export default function SessionDetailCard({ session, onRefresh }: SessionDetailC
           {session.duration_seconds !== undefined && (
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 flex-shrink-0" />
-              <span>{Math.floor(session.duration_seconds / 60)}m {session.duration_seconds % 60}s</span>
+              <span>
+                {Math.floor(session.duration_seconds / 60)}m {session.duration_seconds % 60}s
+              </span>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -137,9 +145,7 @@ export default function SessionDetailCard({ session, onRefresh }: SessionDetailC
               <h4 className="text-sm font-semibold text-foreground">Transcript</h4>
             </div>
             {hasTranscription ? (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {combinedTranscript.substring(0, 150)}...
-              </p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{combinedTranscript.substring(0, 150)}...</p>
             ) : (
               <p className="text-sm text-muted-foreground">No speech detected...</p>
             )}
@@ -161,17 +167,15 @@ export default function SessionDetailCard({ session, onRefresh }: SessionDetailC
                   className="h-7 text-xs"
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
-                  {isGeneratingSummary ? 'Generating...' : 'Generate'}
+                  {isGeneratingSummary ? "Generating..." : "Generate"}
                 </Button>
               )}
             </div>
             {hasSummary ? (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {session.summary.substring(0, 150)}...
-              </p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{session.summary.substring(0, 150)}...</p>
             ) : (
               <p className="text-sm text-muted-foreground">
-                {hasTranscription ? 'Click "Generate" to create AI summary' : 'No speech detected...'}
+                {hasTranscription ? 'Click "Generate" to create AI summary' : "No speech detected..."}
               </p>
             )}
           </div>
